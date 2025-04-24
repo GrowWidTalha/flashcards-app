@@ -1,9 +1,9 @@
 import axios from "axios";
 
-const API_BASE_URL = "http://localhost:5000/api";
-const API_BASE_URL_LOCAL = "http://localhost:5000/api";
-// const API_BASE_URL = "https://quizapp-backend-gold.vercel.app/api";
-// const API_BASE_URL_LOCAL = "https://quizapp-backend-gold.vercel.app/api";
+// const API_BASE_URL = "http://localhost:5000/api";
+// const API_BASE_URL_LOCAL = "http://localhost:5000/api";
+const API_BASE_URL = "https://flashcards-app-backend.vercel.app/api";
+const API_BASE_URL_LOCAL = "https://flashcards-app-backend.vercel.app/api";
 
 export const fetchAllQuestions = async () => {
     try {

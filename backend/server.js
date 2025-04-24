@@ -18,7 +18,9 @@ connectDB();
 app.use(cors({
     origin: [
         'https://quizapp-one-cyan.vercel.app',
-        'http://localhost:5173'
+        'https://flashcards-app-frontend.vercel.app',
+        'http://localhost:5173',
+        "*"
     ],
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true,

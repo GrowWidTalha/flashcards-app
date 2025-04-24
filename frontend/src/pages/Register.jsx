@@ -2,8 +2,11 @@ import React, { useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { Container, Form, Button, Row, Col } from "react-bootstrap";
-const API_BASE_URL = "http://localhost:5000/api";
-const API_BASE_URL_LOCAL = "http://localhost:5000/api";
+// const API_BASE_URL = "http://localhost:5000/api";
+// const API_BASE_URL_LOCAL = "http://localhost:5000/api";
+const API_BASE_URL = "https://flashcards-app-backend.vercel.app/api";
+const API_BASE_URL_LOCAL = "https://flashcards-app-backend.vercel.app/api";
+
 const Register = () => {
     const navigate = useNavigate();
     const [step, setStep] = useState(1);
