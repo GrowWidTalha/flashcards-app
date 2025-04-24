@@ -82,7 +82,7 @@ const Register = () => {
     ];
 
     return (
-        <Container style={{ maxWidth: 600, marginTop: 50 }}>
+        <Container className="quiz-container" style={{ maxWidth: 600, marginTop: 50 }}>
             <Form onSubmit={handleSubmit(onSubmit)}>
                 {step === 1 && (
                     <>
