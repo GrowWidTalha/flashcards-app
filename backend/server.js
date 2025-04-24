@@ -21,7 +21,6 @@ app.use(cors({
         'https://flashcards-app-frontend.vercel.app',
         'https://flashcards-app-frontend-neon.vercel.app',
         'http://localhost:5173',
-        "*"
     ],
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true,
