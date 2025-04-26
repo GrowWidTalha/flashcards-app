@@ -72,7 +72,8 @@ const Register = () => {
         }
     };
 
-    const handleNext = async () => {
+    const handleNext = async (e) => {
+        e.preventDefault(); // Prevent form submission
         let valid = true;
 
         if (step === 1) {
@@ -86,7 +87,8 @@ const Register = () => {
         }
     };
 
-    const handleBack = () => {
+    const handleBack = (e) => {
+        e.preventDefault(); // Prevent form submission
         if (step > 1) setStep(step - 1);
     };
 
