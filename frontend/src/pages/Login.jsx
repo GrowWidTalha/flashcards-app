@@ -41,7 +41,7 @@ const Login = () => {
 
     return (
         <Container className="auth-container">
-            <div className="auth-card">
+            <div className="auth-card" style={{ backgroundColor: "white", borderRadius: "20px", padding: "20px" }}>
                 <h2 className="text-center mb-4">Welcome Back</h2>
 
                 {error && (
@@ -109,43 +109,6 @@ const Login = () => {
                 </div>
             </div>
 
-            <style jsx>{`
-                .auth-container {
-                    min-height: 100vh;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    padding: 2rem;
-                    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-                }
-
-                .auth-card {
-                    background: white;
-                    padding: 2rem;
-                    border-radius: 15px;
-                    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-                    width: 100%;
-                    max-width: 400px;
-                }
-
-                .form-control {
-                    height: 48px;
-                    font-size: 1rem;
-                    border-radius: 8px;
-                    border: 1px solid #ced4da;
-                }
-
-                .form-control:focus {
-                    border-color: #80bdff;
-                    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
-                }
-
-                .btn {
-                    height: 48px;
-                    font-size: 1rem;
-                    border-radius: 8px;
-                }
-            `}</style>
         </Container>
     );
 };
