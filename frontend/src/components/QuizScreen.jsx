@@ -31,12 +31,13 @@ const QuizScreen = ({
     onLoadRandomSet,
     renderCategoryPath,
     recommendedSets,
+    onSetComplete,
 }) => {
     const [isFinished, setIsFinished] = useState(false);
     const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
     const [showReport, setShowReport] = useState(false);
 
-    // Called when user clicks “Finish Set”
+    // Called when user clicks "Finish Set"
     const handleFinish = () => {
         try {
             const response = registerProgress(currentSet.setCode, currentSet.questions.length)
@@ -44,7 +45,7 @@ const QuizScreen = ({
             console.error(error)
         }
         setIsFinished(true);
-
+        onSetComplete(); // Call onSetComplete when a set is finished
     }
 
     // Called after feedback screen
@@ -58,7 +59,7 @@ const QuizScreen = ({
         setFeedbackSubmitted(true);
     };
 
-    // Called when user clicks “Restart this set” in NextActions
+    // Called when user clicks "Restart this set" in NextActions
     const handleRestart = () => {
 
         onLoadSet(currentSet._id);
@@ -229,7 +230,7 @@ const QuizScreen = ({
                 </Modal.Header>
                 <Modal.Body>
                     <p>
-                        We’d love to know how we can improve this question set! Please rate
+                        We'd love to know how we can improve this question set! Please rate
                         its quality and share any suggestions.
                     </p>
                     <RatingSelect

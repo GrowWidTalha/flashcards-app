@@ -12,6 +12,7 @@ const authRoutes = require('./routes/authRoutes');
 const progressRoutes = require("./routes/progressRoutes");
 const ratingRoutes = require("./routes/ratingRoutes");
 const reportRoutes = require("./routes/reportRoutes");
+const feedbackRoutes = require("./routes/feedbackRoutes");
 const app = express();
 connectDB();
 
@@ -41,6 +42,7 @@ app.use('/api/questions', questionRoutes);
 app.use('/api/recommendations', recommendationRoutes);
 app.use("/api/rating", ratingRoutes);
 app.use("/api/report", reportRoutes);
+app.use('/api/feedback', feedbackRoutes);
 
 // Start server
 const PORT = process.env.PORT || 5000;

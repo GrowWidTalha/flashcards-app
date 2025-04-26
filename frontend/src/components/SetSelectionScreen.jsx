@@ -14,6 +14,7 @@ import {
     FaUpload,
     FaSearch,
     FaInfoCircle,
+    FaHistory
 } from "react-icons/fa";
 import "./Quiz.css";
 import FileUploadModel from "./FileUploadModel";
@@ -24,6 +25,7 @@ const SetSelectionScreen = ({
     onLoadSet,
     onLoadRandomSet,
     onFileUpload,
+    onShowMySets
 }) => {
     const [searchTerm, setSearchTerm] = React.useState("");
 
@@ -62,7 +64,14 @@ const SetSelectionScreen = ({
                         />
                     </div>
                 </Col>
-                <Col md={6} className="d-flex align-items-center justify-content-end">
+                <Col md={6} className="d-flex align-items-center justify-content-end gap-2">
+                    <Button
+                        variant="info"
+                        className="me-2"
+                        onClick={onShowMySets}
+                    >
+                        <FaHistory className="me-2" /> My Sets
+                    </Button>
                     <FileUploadModel
                         onFileUpload={onFileUpload}
                     />

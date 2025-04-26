@@ -3,7 +3,9 @@ import "./Quiz.css";
 import LoadingScreen from "./LoadingScreen";
 import QuizScreen from "./QuizScreen";
 import SetSelectionScreen from "./SetSelectionScreen";
-import { fetchAllQuestions } from "../handlers/apiHandlers";
+import MySetsScreen from "./MySetsScreen";
+import UploadSetsPrompt from "./UploadSetsPrompt";
+import { fetchAllQuestions, fetchRecentProgress } from "../handlers/apiHandlers";
 import { organizeSets } from "../handlers/setHandlers";
 import {
     loadSetHandler,
@@ -29,6 +31,13 @@ const Quiz = () => {
     const [studiedSets, setStudiedSets] = useState([]);
     const [recommendedSets, setRecommendedSets] = useState([]);
     const [showSetInfo, setShowSetInfo] = useState(false);
+    const [showMySets, setShowMySets] = useState(false);
+    const [recentProgress, setRecentProgress] = useState([]);
+    const [completedSetsCount, setCompletedSetsCount] = useState(() => {
+        const saved = localStorage.getItem('completedSetsCount');
+        return saved ? parseInt(saved) : 0;
+    });
+    const [showUploadPrompt, setShowUploadPrompt] = useState(false);
 
     // Fetch all sets on component mount
     useEffect(() => {
@@ -49,11 +58,100 @@ const Quiz = () => {
         fetchAllSets();
     }, []);
 
+    // Fetch recent progress when showing My Sets screen
+    useEffect(() => {
+        const loadRecentProgress = async () => {
+            if (showMySets) {
+                try {
+                    const progress = await fetchRecentProgress();
+                    setRecentProgress(progress);
+                } catch (error) {
+                    console.error("Error fetching recent progress:", error);
+                }
+            }
+        };
+
+        loadRecentProgress();
+    }, [showMySets]);
+
+    // Save completed sets count to localStorage
+    useEffect(() => {
+        localStorage.setItem('completedSetsCount', completedSetsCount.toString());
+    }, [completedSetsCount]);
+
+    // Handle set completion
+    const handleSetCompletion = () => {
+        const newCount = completedSetsCount + 1;
+        setCompletedSetsCount(newCount);
+
+        // Show upload prompt every 5 completed sets
+        if (newCount % 5 === 0) {
+            setShowUploadPrompt(true);
+        }
+    };
+
+    // Handle upload prompt actions
+    const handleUploadPromptClose = () => {
+        setShowUploadPrompt(false);
+    };
+
+    const handleUploadClick = () => {
+        setShowUploadPrompt(false);
+        // Trigger file upload modal or redirect to upload page
+        setShowModal(true);
+    };
+
+    const handleLoadSet = (setCode) => {
+        setShowMySets(false); // Hide MySets screen when loading a set
+        loadSetHandler(
+            setCode,
+            allSets,
+            setCurrentSet,
+            setCurrentIndex,
+            setShowAnswer,
+            studiedSets,
+            setStudiedSets,
+            setLoading,
+            setRecommendedSets,
+            favorites
+        );
+    };
+
+    // Find set details for progress records
+    const getSetDetails = (setCode) => {
+        return allSets.find(set => set.setCode === setCode) || {
+            setName: `Set ${setCode}`,
+            setDescription: "",
+            questions: []
+        };
+    };
+
+    // Combine progress with set details
+    const recentSetsWithDetails = recentProgress.map(progress => ({
+        ...getSetDetails(progress.setCode),
+        timesPracticed: progress.timesPracticed,
+        lastPracticed: progress.lastAttempted
+    }));
+
     return (
         <div className="quiz-container">
+            {/* Upload Sets Prompt Modal */}
+            <UploadSetsPrompt
+                show={showUploadPrompt}
+                onHide={handleUploadPromptClose}
+                onUploadClick={handleUploadClick}
+            />
 
             {loading ? (
                 <LoadingScreen />
+            ) : showMySets ? (
+                <MySetsScreen
+                    studiedSets={recentSetsWithDetails}
+                    recommendedSets={recommendedSets}
+                    onLoadSet={handleLoadSet}
+                    favorites={favorites}
+                    onReturnToMenu={() => setShowMySets(false)}
+                />
             ) : currentSet ? (
                 <QuizScreen
                     currentSet={currentSet}
@@ -81,23 +179,11 @@ const Quiz = () => {
                             currentSet
                         )
                     }
-                    onReturnToMenu={() =>
-                        returnToMainMenu(setCurrentSet, setCurrentIndex, setShowAnswer)
-                    }
-                    onLoadSet={(setCode) =>
-                        loadSetHandler(
-                            setCode,
-                            allSets,
-                            setCurrentSet,
-                            setCurrentIndex,
-                            setShowAnswer,
-                            studiedSets,
-                            setStudiedSets,
-                            setLoading,
-                            setRecommendedSets,
-                            favorites
-                        )
-                    }
+                    onReturnToMenu={() => {
+                        returnToMainMenu(setCurrentSet, setCurrentIndex, setShowAnswer);
+                        setShowMySets(false);
+                    }}
+                    onLoadSet={handleLoadSet}
                     onLoadRandomSet={() =>
                         loadRandomSetHandler(
                             allSets,
@@ -118,25 +204,13 @@ const Quiz = () => {
                         handleFileUpload(e.target.files[0], setLoading, fetchAllQuestions)
                     }
                     renderCategoryPath={() => renderCategoryPath(currentSet)}
+                    onSetComplete={handleSetCompletion}
                 />
             ) : (
                 <SetSelectionScreen
                     allSets={allSets}
                     favorites={favorites}
-                    onLoadSet={(setCode) =>
-                        loadSetHandler(
-                            setCode,
-                            allSets,
-                            setCurrentSet,
-                            setCurrentIndex,
-                            setShowAnswer,
-                            studiedSets,
-                            setStudiedSets,
-                            setLoading,
-                            setRecommendedSets,
-                            favorites
-                        )
-                    }
+                    onLoadSet={handleLoadSet}
                     onLoadRandomSet={() =>
                         loadRandomSetHandler(
                             allSets,
@@ -156,6 +230,7 @@ const Quiz = () => {
                     onFileUpload={(e) =>
                         handleFileUpload(e.target.files[0], setLoading, fetchAllQuestions)
                     }
+                    onShowMySets={() => setShowMySets(true)}
                 />
             )}
         </div>

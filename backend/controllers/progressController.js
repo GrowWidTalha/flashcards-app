@@ -46,3 +46,20 @@ exports.recordProgress = async (req, res) => {
         res.status(500).json({ message: "Server error" });
     }
 };
+
+// GET /api/progress/recent
+exports.getRecentProgress = async (req, res) => {
+    const userId = req.user.id;
+
+    try {
+        const recentProgress = await Progress.find({ user: userId })
+            .sort({ lastAttempted: -1 })
+            .limit(8)
+            .lean();
+
+        res.json(recentProgress);
+    } catch (err) {
+        console.error("Error fetching recent progress:", err);
+        res.status(500).json({ message: "Server error" });
+    }
+};

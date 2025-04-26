@@ -1,9 +1,9 @@
 import axios from "axios";
 
-// const API_BASE_URL = "http://localhost:5000/api";
-// const API_BASE_URL_LOCAL = "http://localhost:5000/api";
-const API_BASE_URL = "https://flashcards-app-backend.vercel.app/api";
-const API_BASE_URL_LOCAL = "https://flashcards-app-backend.vercel.app/api";
+export const API_BASE_URL = "http://localhost:5000/api";
+const API_BASE_URL_LOCAL = "http://localhost:5000/api";
+// export const API_BASE_URL = "https://flashcards-app-backend.vercel.app/api";
+// const API_BASE_URL_LOCAL = "https://flashcards-app-backend.vercel.app/api";
 
 export const fetchAllQuestions = async () => {
     try {
@@ -77,7 +77,6 @@ export const fetchRecommendations = async (studiedSets, favorites) => {
     }
 };
 
-
 export const registerProgress = async (setCode, questionCount) => {
     try {
         const response = fetch(API_BASE_URL + "/progress/record", {
@@ -93,6 +92,27 @@ export const registerProgress = async (setCode, questionCount) => {
         console.error("Error fetching recommendations:", error);
     }
 }
+
+export const fetchRecentProgress = async () => {
+    try {
+        const response = await fetch(API_BASE_URL + "/progress/recent", {
+            method: "GET",
+            headers: {
+                "Authorization": `Bearer ${localStorage.getItem("token")}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error("Failed to fetch recent progress");
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error("Error fetching recent progress:", error);
+        return [];
+    }
+}
+
 export const recordQuestionFeedback = async (overallRating, difficultyRating, setCode) => {
     try {
         const response = fetch(API_BASE_URL + "/rating", {
@@ -112,6 +132,7 @@ export const recordQuestionFeedback = async (overallRating, difficultyRating, se
         console.error("Error fetching recommendations:", error);
     }
 }
+
 export const addReport = async (qualityRating, message, setCode) => {
     try {
         const response = fetch(API_BASE_URL + "/report", {
