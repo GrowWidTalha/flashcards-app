@@ -7,12 +7,15 @@ const connectDB = require('./config/db');
 const uploadRoutes = require('./routes/uploadRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const questionRoutes = require('./routes/questionRoutes');
+const moduleRoutes = require('./routes/moduleRoutes');
+const setRoutes = require('./routes/setRoutes');
 const recommendationRoutes = require('./routes/recommendationRoutes');
 const authRoutes = require('./routes/authRoutes');
 const progressRoutes = require("./routes/progressRoutes");
 const ratingRoutes = require("./routes/ratingRoutes");
 const reportRoutes = require("./routes/reportRoutes");
 const feedbackRoutes = require("./routes/feedbackRoutes");
+const commentRoutes = require('./routes/commentRoutes');
 const app = express();
 connectDB();
 
@@ -39,10 +42,13 @@ app.use("/api/progress", progressRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/questions', questionRoutes);
+app.use('/api/modules', moduleRoutes);
+app.use('/api/sets', setRoutes);
 app.use('/api/recommendations', recommendationRoutes);
 app.use("/api/rating", ratingRoutes);
 app.use("/api/report", reportRoutes);
 app.use('/api/feedback', feedbackRoutes);
+app.use('/api/comments', commentRoutes);
 
 // Start server
 const PORT = process.env.PORT || 5000;

@@ -5,7 +5,7 @@ import QuizScreen from "./QuizScreen";
 import SetSelectionScreen from "./SetSelectionScreen";
 import MySetsScreen from "./MySetsScreen";
 import UploadSetsPrompt from "./UploadSetsPrompt";
-import { fetchAllQuestions, fetchRecentProgress } from "../handlers/apiHandlers";
+import { fetchAllQuestions, fetchRecentProgress, submitAndCheckAnswer } from "../handlers/apiHandlers";
 import { organizeSets } from "../handlers/setHandlers";
 import {
     loadSetHandler,
@@ -15,7 +15,6 @@ import {
 } from "../handlers/setHandlers";
 import { handleFileUpload } from "../handlers/fileHandlers";
 import {
-    handleNextQuestion,
     handlePreviousQuestion,
     returnToMainMenu,
 } from "../handlers/quizHandlers";
@@ -27,6 +26,8 @@ const Quiz = () => {
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [showAnswer, setShowAnswer] = useState(false);
+    const [userAnswer, setUserAnswer] = useState('');
+    const [answerResult, setAnswerResult] = useState(null);
     const [favorites, setFavorites] = useState([]);
     const [studiedSets, setStudiedSets] = useState([]);
     const [recommendedSets, setRecommendedSets] = useState([]);
@@ -79,6 +80,45 @@ const Quiz = () => {
         localStorage.setItem('completedSetsCount', completedSetsCount.toString());
     }, [completedSetsCount]);
 
+    // Handle user answer input
+    const handleUserAnswerChange = (e) => {
+        setUserAnswer(e.target.value);
+    };
+
+    // Handle submit answer
+    const handleSubmitAnswer = async () => {
+        if (!userAnswer.trim() || !currentSet) return;
+
+        try {
+            const questionId = currentSet.questions[currentIndex]?.questionId || currentIndex;
+            const result = await submitAndCheckAnswer(currentSet.setCode, questionId, userAnswer);
+            setAnswerResult(result);
+            setShowAnswer(true);
+        } catch (error) {
+            console.error('Error submitting answer:', error);
+        }
+    };
+
+    // Modified next question handler to include answer submission
+    const handleNextQuestion = () => {
+        if (!currentSet?.questions) return;
+
+        if (!showAnswer) {
+            // If answer is not shown, submit and check answer
+            handleSubmitAnswer();
+        } else {
+            if (currentIndex < currentSet.questions.length - 1) {
+                setCurrentIndex(currentIndex + 1);
+                setShowAnswer(false);
+                setUserAnswer('');
+                setAnswerResult(null);
+            } else {
+                // Last question completed
+                handleSetCompletion();
+            }
+        }
+    };
+
     // Handle set completion
     const handleSetCompletion = () => {
         const newCount = completedSetsCount + 1;
@@ -115,6 +155,9 @@ const Quiz = () => {
             setRecommendedSets,
             favorites
         );
+        // Reset user answer state
+        setUserAnswer('');
+        setAnswerResult(null);
     };
 
     // Find set details for progress records
@@ -161,6 +204,10 @@ const Quiz = () => {
                     favorites={favorites}
                     recommendedSets={recommendedSets}
                     showModal={showModal}
+                    userAnswer={userAnswer}
+                    answerResult={answerResult}
+                    onUserAnswerChange={handleUserAnswerChange}
+                    onSubmitAnswer={handleSubmitAnswer}
                     onToggleFavorite={(setCode) =>
                         toggleFavoriteHandler(setCode, favorites, setFavorites)
                     }
@@ -170,15 +217,7 @@ const Quiz = () => {
                     onPrevious={() =>
                         handlePreviousQuestion(currentIndex, setCurrentIndex, setShowAnswer)
                     }
-                    onNext={() =>
-                        handleNextQuestion(
-                            currentIndex,
-                            setCurrentIndex,
-                            showAnswer,
-                            setShowAnswer,
-                            currentSet
-                        )
-                    }
+                    onNext={handleNextQuestion}
                     onReturnToMenu={() => {
                         returnToMainMenu(setCurrentSet, setCurrentIndex, setShowAnswer);
                         setShowMySets(false);

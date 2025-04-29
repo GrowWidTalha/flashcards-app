@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
     Badge,
     Button,
@@ -7,10 +7,11 @@ import {
     Spinner,
     Form,
 } from "react-bootstrap";
-import { FaBackward, FaHome, FaRandom, FaRegStar, FaStar } from "react-icons/fa";
+import { FaBackward, FaHome, FaRandom, FaRegStar, FaStar, FaComment, FaArrowLeft, FaArrowRight } from "react-icons/fa";
 import FileUploadModal from "./FileUploadModel";
-import { addReport, recordQuestionFeedback, registerProgress } from "../handlers/apiHandlers"
+import { addReport, recordQuestionFeedback, registerProgress, addQuestionComment, getQuestionComments } from "../handlers/apiHandlers"
 import axios from "axios"
+import "./QuizScreen.css";
 
 const QuizScreen = ({
     currentSet,
@@ -32,10 +33,47 @@ const QuizScreen = ({
     renderCategoryPath,
     recommendedSets,
     onSetComplete,
+    userAnswer,
+    answerResult,
+    onUserAnswerChange,
+    onSubmitAnswer,
 }) => {
     const [isFinished, setIsFinished] = useState(false);
     const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
     const [showReport, setShowReport] = useState(false);
+    const [showComments, setShowComments] = useState(false);
+    const [commentText, setCommentText] = useState("");
+    const [comments, setComments] = useState([]);
+    const [loadingComments, setLoadingComments] = useState(false);
+
+    // Fetch comments whenever the current question changes
+    useEffect(() => {
+        if (currentSet?.questions?.length > 0 && currentIndex >= 0) {
+            fetchComments();
+        }
+    }, [currentSet, currentIndex]);
+
+    // Reset user answer when question changes
+    useEffect(() => {
+        setUserAnswer("");
+    }, [currentIndex]);
+
+    // Fetch comments for the current question
+    const fetchComments = async () => {
+        if (!currentSet?.questions?.[currentIndex]) return;
+
+        try {
+            setLoadingComments(true);
+            const questionId = currentSet.questions[currentIndex].questionId || currentIndex;
+            const data = await getQuestionComments(currentSet.setCode, questionId);
+            setComments(data || []);
+        } catch (error) {
+            console.error("Error fetching comments:", error);
+            setComments([]);
+        } finally {
+            setLoadingComments(false);
+        }
+    };
 
     // Called when user clicks "Finish Set"
     const handleFinish = () => {
@@ -45,7 +83,7 @@ const QuizScreen = ({
             console.error(error)
         }
         setIsFinished(true);
-        onSetComplete(); // Call onSetComplete when a set is finished
+        onSetComplete && onSetComplete(); // Call onSetComplete when a set is finished
     }
 
     // Called after feedback screen
@@ -61,10 +99,36 @@ const QuizScreen = ({
 
     // Called when user clicks "Restart this set" in NextActions
     const handleRestart = () => {
-
         onLoadSet(currentSet._id);
         setIsFinished(false);
         setFeedbackSubmitted(false);
+    };
+
+    // Handle adding a comment
+    const handleAddComment = async () => {
+        if (!commentText.trim()) return;
+
+        try {
+            // Add comment to the API
+            await addQuestionComment(
+                currentSet.setCode,
+                currentSet.questions[currentIndex].questionId || currentIndex,
+                commentText
+            );
+
+            // Update local state
+            const newComment = {
+                id: Date.now(),
+                text: commentText,
+                date: new Date().toISOString(),
+                user: "You" // This would be replaced with actual user info
+            };
+
+            setComments(prev => [...prev, newComment]);
+            setCommentText("");
+        } catch (error) {
+            console.error("Error adding comment:", error);
+        }
     };
 
     // === FEEDBACK SCREEN ===
@@ -262,6 +326,75 @@ const QuizScreen = ({
         );
     };
 
+    const CommentItem = ({ comment }) => (
+        <div className="comment-item">
+            <div className="comment-header">
+                <strong>{comment.user || comment.username || 'Anonymous'}</strong>
+                <small className="text-muted">
+                    {new Date(comment.date || comment.createdAt).toLocaleString()}
+                </small>
+            </div>
+            <p className="mb-0">{comment.text || comment.content}</p>
+        </div>
+    );
+
+    // Add renderAnswerInput function inside the component
+    const renderAnswerInput = () => {
+        if (showAnswer) {
+            // Show answer result
+            return (
+                <div className="answer-result-container mt-3">
+                    {answerResult && (
+                        <div className={`answer-result ${answerResult.correct ? 'correct' : answerResult.partiallyCorrect ? 'partially-correct' : 'incorrect'}`}>
+                            <div className="user-answer mb-2">
+                                <h5>Your Answer:</h5>
+                                <p>{answerResult.userAnswer}</p>
+                            </div>
+                            <div className="correct-answer mb-2">
+                                <h5>Correct Answer:</h5>
+                                <p>{answerResult.correctAnswer}</p>
+                            </div>
+                            {answerResult.similarity < 100 && (
+                                <div className="similarity mb-2">
+                                    <p>Similarity: {Math.round(answerResult.similarity)}%</p>
+                                </div>
+                            )}
+                            {answerResult.moreInfo && (
+                                <div className="more-info mt-3">
+                                    <h5>Additional Information:</h5>
+                                    <p>{answerResult.moreInfo}</p>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+            );
+        } else {
+            // Show answer input field
+            return (
+                <div className="answer-input-container mt-3">
+                    <Form.Group>
+                        <Form.Label>Your Answer:</Form.Label>
+                        <Form.Control
+                            as="textarea"
+                            rows={3}
+                            value={userAnswer}
+                            onChange={onUserAnswerChange}
+                            placeholder="Type your answer here..."
+                        />
+                    </Form.Group>
+                    <Button
+                        className="mt-2"
+                        onClick={onSubmitAnswer}
+                        disabled={!userAnswer?.trim()}
+                    >
+                        Submit Answer
+                    </Button>
+                </div>
+            );
+        }
+    };
+
     // —————————————————————————————
     // 1) If finished but not yet rated → show FeedbackScreen
     // 2) If finished and rated      → show NextActionsScreen
@@ -281,9 +414,8 @@ const QuizScreen = ({
 
     // —————————————————————————————
     //  Normal quiz view
-    console.log(currentSet)
     return (
-        <div className="">
+        <div className="quiz-container">
             {loading ? (
                 <div className="loading-container">
                     <Spinner animation="border" variant="primary" className="m-2" />
@@ -292,168 +424,193 @@ const QuizScreen = ({
                     </p>
                 </div>
             ) : (
-                <div className="quiz-card">
-                    {/* Top Bar */}
-                    <div className="top-bar d-flex justify-content-between align-items-center">
-                        <h3>{currentSet?.setName || "No Set Loaded"}</h3>
-                        {currentSet && (
-                            <Button
-                                variant="link"
-                                onClick={onToggleSetInfo}
-                            >
-                                {showSetInfo ? "Hide Info" : "Show Info"}
-                            </Button>
-                        )}
-                    </div>
-
-                    {/* Set Info */}
-                    {showSetInfo && currentSet && (
-                        <div className="set-details mb-3">
-                            <p>
-                                <strong>Description:</strong>{" "}
-                                {currentSet.setDescription}
-                            </p>
-                            <p>
-                                <strong>Category:</strong>{" "}
-                                {renderCategoryPath()}
-                            </p>
-                            <p>
-                                <strong>Set Code:</strong> {currentSet.setCode}
-                            </p>
-                            <Button
-                                variant={
-                                    favorites.includes(currentSet.setCode)
-                                        ? "warning"
-                                        : "outline-warning"
-                                }
-                                size="sm"
-                                onClick={() =>
-                                    onToggleFavorite(currentSet.setCode)
-                                }
-                                className="me-2"
-                            >
-                                {favorites.includes(currentSet.setCode) ? (
-                                    <FaStar />
-                                ) : (
-                                    <FaRegStar />
-                                )}
-                                {favorites.includes(currentSet.setCode)
-                                    ? " Favorited"
-                                    : " Add to Favorites"}
-                            </Button>
-                        </div>
-                    )}
-
-                    {/* Question / Answer */}
+                <div className="quiz-card-container">
                     {currentSet?.questions?.length > 0 ? (
                         <>
-                            <div className="question-container mb-3">
-                                <p className="fw-bold">
-                                    Question {currentIndex + 1} of{" "}
-                                    {currentSet.questions.length}
-                                </p>
-                                <p>
-                                    {currentSet.questions[currentIndex].question}
-                                </p>
+                            {/* Question Header */}
+                            <div className="question-header">
+                                Question {currentIndex + 1} of {currentSet.questions.length}
                             </div>
 
-                            {showAnswer && (
-                                <div className="answer-container mb-3">
-                                    <p className="fw-bold">Answer:</p>
-                                    <p>
-                                        {currentSet.questions[currentIndex].answer}
-                                    </p>
+                            {/* Question Text */}
+                            <div className="question-text">
+                                {currentSet.questions[currentIndex].question}
+                            </div>
+
+                            {/* User Answer Input (only when answer not shown) */}
+                            {!showAnswer && (
+                                <div className="answer-input-container mt-3">
+                                    <Form.Group>
+                                        <Form.Label>Your Answer:</Form.Label>
+                                        <Form.Control
+                                            as="textarea"
+                                            rows={3}
+                                            value={userAnswer}
+                                            onChange={onUserAnswerChange}
+                                            placeholder="Type your answer here..."
+                                        />
+                                    </Form.Group>
+                                    <Button
+                                        className="mt-2"
+                                        onClick={onSubmitAnswer}
+                                        disabled={!userAnswer?.trim()}
+                                    >
+                                        Submit Answer
+                                    </Button>
                                 </div>
                             )}
+
+                            {/* Answer Display */}
+                            {showAnswer && (
+                                <div className="answer-container">
+                                    <div className="title">Answer:</div>
+                                    <p>{currentSet.questions[currentIndex].answer}</p>
+                                </div>
+                            )}
+
+                            {/* Tags and Serial Number */}
+                            <div className="tags-container">
+                                <span className="tag tag-category">{currentSet.setName}</span>
+                                <span className="tag tag-primary">{currentSet.category || "Category"}</span>
+                                <span className="tag tag-primary">{currentSet.subCategory1 || "Subcategory"}</span>
+                                <span className="tag tag-primary">{currentSet.subCategory2 || "Level"}</span>
+                                <span className="serial-number">Serial: {currentSet.serialNumber || "xxxx"}</span>
+                                <FaArrowRight className="arrow-icon" />
+                            </div>
+
+                            {/* Show Info link */}
+                            <a href="#" className="show-info" onClick={(e) => {
+                                e.preventDefault();
+                                onToggleSetInfo();
+                            }}>
+                                Show Info
+                            </a>
+
+                            {/* Action Buttons */}
+                            <div className="buttons-row">
+                                <button
+                                    className="nav-button button-outline"
+                                    onClick={() => setShowReport(true)}
+                                >
+                                    Improve / Add Report
+                                </button>
+
+                                <button
+                                    className="nav-button button-secondary"
+                                    onClick={onPrevious}
+                                    disabled={currentIndex === 0}
+                                >
+                                    Previous
+                                </button>
+
+                                <button
+                                    className="nav-button button-primary"
+                                    onClick={() => {
+                                        if (showAnswer && currentIndex === currentSet.questions.length - 1) {
+                                            handleFinish();
+                                        } else {
+                                            onNext();
+                                        }
+                                    }}
+                                >
+                                    {showAnswer
+                                        ? currentIndex === currentSet.questions.length - 1
+                                            ? "Finish Set"
+                                            : "Next Question"
+                                        : "Show Answer"}
+                                </button>
+                            </div>
+
+                            {/* Only show More Info button when answer is displayed */}
+                            {showAnswer && (
+                                <button
+                                    className="nav-button button-primary more-info-container"
+                                    onClick={onShowModal}
+                                >
+                                    More Info
+                                </button>
+                            )}
+
+                            {/* Comments Section (only when answer is shown) */}
+                            {showAnswer && showComments && (
+                                <div className="comments-container">
+                                    <div className="d-flex justify-content-between align-items-center mb-2">
+                                        <h5>
+                                            <FaComment className="me-2" />
+                                            Comments
+                                        </h5>
+                                        <Button
+                                            variant="link"
+                                            onClick={() => setShowComments(!showComments)}
+                                        >
+                                            Hide Comments
+                                        </Button>
+                                    </div>
+
+                                    <div className="comments-list mb-3">
+                                        {loadingComments ? (
+                                            <div className="text-center py-3">
+                                                <Spinner animation="border" size="sm" />
+                                                <span className="ms-2">Loading comments...</span>
+                                            </div>
+                                        ) : comments.length > 0 ? (
+                                            comments.map(comment => (
+                                                <CommentItem key={comment.id} comment={comment} />
+                                            ))
+                                        ) : (
+                                            <p className="text-muted">No comments yet. Be the first to comment!</p>
+                                        )}
+                                    </div>
+
+                                    <Form.Group className="mb-3">
+                                        <Form.Control
+                                            as="textarea"
+                                            rows={2}
+                                            value={commentText}
+                                            onChange={(e) => setCommentText(e.target.value)}
+                                            placeholder="Add a comment..."
+                                        />
+                                    </Form.Group>
+
+                                    <Button
+                                        variant="primary"
+                                        size="sm"
+                                        onClick={handleAddComment}
+                                        disabled={!commentText.trim()}
+                                    >
+                                        Post Comment
+                                    </Button>
+                                </div>
+                            )}
+
+                            {/* Show Comments button (only when answer is shown) */}
+                            {showAnswer && !showComments && (
+                                <Button
+                                    variant="outline-secondary"
+                                    className="mt-3 w-100"
+                                    onClick={() => setShowComments(true)}
+                                >
+                                    <FaComment className="me-2" />
+                                    Show Comments
+                                </Button>
+                            )}
+
+                            {/* Home Button */}
+                            <div className="navigation-row">
+                                <button className="home-icon" onClick={onReturnToMenu}>
+                                    <FaHome />
+                                </button>
+                            </div>
+
+                            {/* Add this right after the question content */}
+                            {!isFinished && !feedbackSubmitted && renderAnswerInput()}
                         </>
                     ) : (
                         <div className="no-questions-message text-center my-5">
                             <h4>No Questions Available</h4>
                             <p>Please upload a file or select a different set</p>
+                            <FileUploadModal onFileUpload={() => { }} />
                         </div>
-                    )}
-
-                    {/* Badges */}
-                    <div className="mb-3">
-                        <Badge bg="light" text="dark" pill className="me-1">
-                            {currentSet?.setCode}
-                        </Badge>
-                        {[
-                            currentSet?.category,
-                            currentSet?.subCategory1,
-                            currentSet?.subCategory2,
-                            currentSet?.subCategory3,
-                            currentSet?.subCategory4,
-                        ]
-                            .filter(Boolean)
-                            .map((cat, i) => (
-                                <Badge key={i} bg="info" className="me-1">
-                                    {cat}
-                                </Badge>
-                            ))}
-                    </div>
-
-                    {/* Navigation */}
-                    <div className="d-flex justify-content-between mb-3">
-                        <Button
-                            variant="secondary"
-                            onClick={onPrevious}
-                            disabled={
-                                currentIndex === 0 ||
-                                !currentSet?.questions?.length
-                            }
-                        >
-                            Previous
-                        </Button>
-
-                        <Button
-                            variant="outline-secondary"
-                            onClick={() => setShowReport(true)}
-                        >
-                            Improve / Add Report
-                        </Button>
-
-                        <Button
-                            variant="primary"
-                            onClick={() => {
-                                if (
-                                    showAnswer &&
-                                    currentIndex ===
-                                    currentSet.questions.length - 1
-                                ) {
-                                    handleFinish();
-                                } else {
-                                    onNext();
-                                }
-                            }}
-                            disabled={!currentSet?.questions?.length}
-                        >
-                            {showAnswer
-                                ? currentIndex ===
-                                    currentSet.questions.length - 1
-                                    ? "Finish Set"
-                                    : "Next Question"
-                                : "Show Answer"}
-                        </Button>
-                    </div>
-
-                    {/* More Info */}
-                    <div className="flex gap-2" >
-                        <Button variant="secondary" onClick={() => onReturnToMenu()}>
-                            <FaHome />
-                        </Button>
-                        <Button
-                            variant="primary"
-                            onClick={onShowModal}
-                            className="w-full"
-                        >
-                            More Info
-                        </Button>
-                    </div>
-
-                    {/* File Upload (if no questions) */}
-                    {!currentSet?.questions?.length && (
-                        <FileUploadModal onFileUpload={() => { }} />
                     )}
                 </div>
             )}

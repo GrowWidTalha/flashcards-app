@@ -1,9 +1,9 @@
 import axios from "axios";
 
-// export const API_BASE_URL = "http://localhost:5000/api";
-// const API_BASE_URL_LOCAL = "http://localhost:5000/api";
-export const API_BASE_URL = "https://flashcards-app-backend.vercel.app/api";
-const API_BASE_URL_LOCAL = "https://flashcards-app-backend.vercel.app/api";
+export const API_BASE_URL = "http://localhost:5000/api";
+const API_BASE_URL_LOCAL = "http://localhost:5000/api";
+// export const API_BASE_URL = "https://flashcards-app-backend.vercel.app/api";
+// const API_BASE_URL_LOCAL = "https://flashcards-app-backend.vercel.app/api";
 
 export const fetchAllQuestions = async () => {
     try {
@@ -79,19 +79,26 @@ export const fetchRecommendations = async (studiedSets, favorites) => {
 
 export const registerProgress = async (setCode, questionCount) => {
     try {
-        const response = fetch(API_BASE_URL + "/progress/record", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${localStorage.getItem("token")}`
+        const token = localStorage.getItem('token');
+        const response = await axios.post(
+            `${API_BASE_URL}/progress/register`,
+            {
+                setCode,
+                questionCount
             },
-            body: JSON.stringify({ setCode: setCode, questionCount: questionCount })
-        });
-
+            {
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: token ? `Bearer ${token}` : ''
+                }
+            }
+        );
+        return response.data;
     } catch (error) {
-        console.error("Error fetching recommendations:", error);
+        console.error('Error registering progress:', error);
+        throw error;
     }
-}
+};
 
 export const fetchRecentProgress = async () => {
     try {
@@ -113,25 +120,29 @@ export const fetchRecentProgress = async () => {
     }
 }
 
-export const recordQuestionFeedback = async (overallRating, difficultyRating, setCode) => {
+export const recordQuestionFeedback = async (rating, difficulty, setCode) => {
     try {
-        const response = fetch(API_BASE_URL + "/rating", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${localStorage.getItem("token")}`
+        const token = localStorage.getItem('token');
+        const response = await axios.post(
+            `${API_BASE_URL}/feedback/record`,
+            {
+                rating,
+                difficulty,
+                setCode
             },
-            body: JSON.stringify({
-                setCode: setCode,
-                overallRating: overallRating,
-                difficultyRating: difficultyRating,
-            })
-        })
-        return response
+            {
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: token ? `Bearer ${token}` : ''
+                }
+            }
+        );
+        return response.data;
     } catch (error) {
-        console.error("Error fetching recommendations:", error);
+        console.error('Error recording feedback:', error);
+        throw error;
     }
-}
+};
 
 export const addReport = async (qualityRating, message, setCode) => {
     try {
@@ -152,3 +163,69 @@ export const addReport = async (qualityRating, message, setCode) => {
         console.error("Error fetching recommendations:", error);
     }
 }
+
+export const addQuestionComment = async (setCode, questionId, commentText) => {
+    try {
+        const token = localStorage.getItem('token');
+        const response = await axios.post(
+            `${API_BASE_URL}/comments/add`,
+            {
+                setCode,
+                questionId,
+                commentText
+            },
+            {
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: token ? `Bearer ${token}` : ''
+                }
+            }
+        );
+        return response.data;
+    } catch (error) {
+        console.error('Error adding comment:', error);
+        throw error;
+    }
+};
+
+export const getQuestionComments = async (setCode, questionId) => {
+    try {
+        const token = localStorage.getItem('token');
+        const response = await axios.get(
+            `${API_BASE_URL}/comments/question/${setCode}/${questionId}`,
+            {
+                headers: {
+                    Authorization: token ? `Bearer ${token}` : ''
+                }
+            }
+        );
+        return response.data;
+    } catch (error) {
+        console.error('Error getting comments:', error);
+        throw error;
+    }
+};
+
+export const submitAndCheckAnswer = async (setCode, questionId, userAnswer) => {
+    try {
+        const token = localStorage.getItem('token');
+        const response = await axios.post(
+            `${API_BASE_URL}/questions/answer`,
+            {
+                setCode,
+                questionId,
+                userAnswer
+            },
+            {
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: token ? `Bearer ${token}` : ''
+                }
+            }
+        );
+        return response.data;
+    } catch (error) {
+        console.error('Error submitting answer:', error);
+        throw error;
+    }
+};
