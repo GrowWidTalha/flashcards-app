@@ -7,10 +7,7 @@ import Home from '../pages/Home';
 import Register from '../pages/Register';
 import Login from '../pages/Login';
 import Feedback from '../pages/Feedback';
-import ModulePage from '../pages/ModulePage';
-// import ModuleDetailPage from '../pages/ModuleDetailPage';
 import ModuleQuizPage from '../pages/ModuleQuizPage';
-import QuizPage from '../pages/QuizPage';
 
 // Define consumer routes
 const consumerRoutes = [
@@ -23,8 +20,6 @@ const consumerRoutes = [
         path: '/login',
         element: <PublicRoute><Login /></PublicRoute>,
     },
-
-    // Protected consumer routes
     {
         path: '/',
         element: <ProtectedRoute><Home /></ProtectedRoute>,
@@ -33,10 +28,6 @@ const consumerRoutes = [
         path: '/module/:moduleCode',
         element: <ProtectedRoute><ModuleQuizPage /></ProtectedRoute>,
     },
-    // {
-    //     path: '/quiz/:quizId',
-    //     element: <ProtectedRoute><QuizPage /></ProtectedRoute>,
-    // },
     {
         path: '/feedback',
         element: <ProtectedRoute><Feedback /></ProtectedRoute>,
@@ -45,7 +36,7 @@ const consumerRoutes = [
     // Fallback route
     {
         path: '*',
-        element: <ProtectedRoute><ModulePage /></ProtectedRoute>,
+        element: <ProtectedRoute><Home /></ProtectedRoute>,
     }
 ];
 

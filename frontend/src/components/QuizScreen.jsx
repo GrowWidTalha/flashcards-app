@@ -1,17 +1,17 @@
-import React, { useState, useEffect } from "react";
+"use client"
+
+import { useState, useEffect } from "react"
+import { Button, Modal, Spinner, Form } from "react-bootstrap"
+import { FaHome, FaRandom, FaComment, FaArrowRight } from "react-icons/fa"
+import FileUploadModal from "./FileUploadModel"
 import {
-    Badge,
-    Button,
-    Card,
-    Modal,
-    Spinner,
-    Form,
-} from "react-bootstrap";
-import { FaBackward, FaHome, FaRandom, FaRegStar, FaStar, FaComment, FaArrowLeft, FaArrowRight } from "react-icons/fa";
-import FileUploadModal from "./FileUploadModel";
-import { addReport, recordQuestionFeedback, registerProgress, addQuestionComment, getQuestionComments } from "../handlers/apiHandlers"
-import axios from "axios"
-import "./QuizScreen.css";
+    addReport,
+    recordQuestionFeedback,
+    registerProgress,
+    addQuestionComment,
+    getQuestionComments,
+} from "../handlers/apiHandlers"
+import "./QuizScreen.css"
 
 const QuizScreen = ({
     currentSet,
@@ -38,103 +38,105 @@ const QuizScreen = ({
     onUserAnswerChange,
     onSubmitAnswer,
 }) => {
-    const [isFinished, setIsFinished] = useState(false);
-    const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
-    const [showReport, setShowReport] = useState(false);
-    const [showComments, setShowComments] = useState(false);
-    const [commentText, setCommentText] = useState("");
-    const [comments, setComments] = useState([]);
-    const [loadingComments, setLoadingComments] = useState(false);
+    // State management
+    const [isFinished, setIsFinished] = useState(false)
+    const [feedbackSubmitted, setFeedbackSubmitted] = useState(false)
+    const [showReport, setShowReport] = useState(false)
+    const [showMoreInfo, setShowMoreInfo] = useState(false)
 
-    // Fetch comments whenever the current question changes
-    useEffect(() => {
-        if (currentSet?.questions?.length > 0 && currentIndex >= 0) {
-            fetchComments();
-        }
-    }, [currentSet, currentIndex]);
 
     // Reset user answer when question changes
     useEffect(() => {
-        setUserAnswer("");
-    }, [currentIndex]);
-
-    // Fetch comments for the current question
-    const fetchComments = async () => {
-        if (!currentSet?.questions?.[currentIndex]) return;
-
-        try {
-            setLoadingComments(true);
-            const questionId = currentSet.questions[currentIndex].questionId || currentIndex;
-            const data = await getQuestionComments(currentSet.setCode, questionId);
-            setComments(data || []);
-        } catch (error) {
-            console.error("Error fetching comments:", error);
-            setComments([]);
-        } finally {
-            setLoadingComments(false);
+        if (onUserAnswerChange) {
+            onUserAnswerChange({ target: { value: "" } })
         }
-    };
+    }, [currentIndex, onUserAnswerChange])
 
-    // Called when user clicks "Finish Set"
-    const handleFinish = () => {
+    // Handle set completion
+    const handleFinish = async () => {
         try {
-            const response = registerProgress(currentSet.setCode, currentSet.questions.length)
+            await registerProgress(currentSet.setCode, currentSet.questions.length)
         } catch (error) {
-            console.error(error)
+            console.error("Error registering progress:", error)
         }
-        setIsFinished(true);
-        onSetComplete && onSetComplete(); // Call onSetComplete when a set is finished
+        setIsFinished(true)
+        onSetComplete && onSetComplete()
     }
 
-    // Called after feedback screen
-    const handleSubmitFeedback = ({ quality, difficulty }) => {
+    // Handle feedback submission
+    const handleSubmitFeedback = async ({ quality, difficulty }) => {
         try {
-            const response = recordQuestionFeedback(quality, difficulty, currentSet.setCode)
-            console.log("Feedback:", quality, difficulty);
+            await recordQuestionFeedback(quality, difficulty, currentSet.setCode)
         } catch (error) {
-            console.error(error)
+            console.error("Error recording feedback:", error)
         }
-        setFeedbackSubmitted(true);
-    };
+        setFeedbackSubmitted(true)
+    }
 
-    // Called when user clicks "Restart this set" in NextActions
+    // Handle set restart
     const handleRestart = () => {
-        onLoadSet(currentSet._id);
-        setIsFinished(false);
-        setFeedbackSubmitted(false);
-    };
+        console.log("Restarting set:", currentSet?._id || "undefined");
+        if (currentSet && onLoadSet) {
+            setIsFinished(false);
+            setFeedbackSubmitted(false);
+            onLoadSet(currentSet._id);
+        } else {
+            console.error("Cannot restart: missing currentSet or onLoadSet function");
+        }
+    }
 
-    // Handle adding a comment
-    const handleAddComment = async () => {
-        if (!commentText.trim()) return;
 
+    // Handle report submission
+    const handleSubmitReport = async ({ reportRating, reportText }) => {
         try {
-            // Add comment to the API
-            await addQuestionComment(
-                currentSet.setCode,
-                currentSet.questions[currentIndex].questionId || currentIndex,
-                commentText
-            );
-
-            // Update local state
-            const newComment = {
-                id: Date.now(),
-                text: commentText,
-                date: new Date().toISOString(),
-                user: "You" // This would be replaced with actual user info
-            };
-
-            setComments(prev => [...prev, newComment]);
-            setCommentText("");
+            await addReport(reportRating, reportText, currentSet.setCode)
         } catch (error) {
-            console.error("Error adding comment:", error);
+            console.error("Error submitting report:", error)
+        }
+    }
+
+    // Render answer input or result
+    const renderAnswerInput = () => {
+        if (showAnswer) {
+            return (
+                <div className="answer-result-container mt-3">
+                    {answerResult && (
+                        <div className="answer-result">
+                            <div className="user-answer mb-2">
+                                <h5>Your Answer:</h5>
+                                <p>{answerResult.userAnswer}</p>
+                            </div>
+                            <div className="correct-answer mb-2">
+                                <h5>Correct Answer:</h5>
+                                <p>{answerResult.correctAnswer}</p>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        } else {
+            return (
+                <div className="answer-input-container mt-3">
+                    <Form.Group>
+                        <Form.Label>Your Answer:</Form.Label>
+                        <Form.Control
+                            as="textarea"
+                            rows={3}
+                            value={userAnswer}
+                            onChange={onUserAnswerChange}
+                            placeholder="Type your answer here..."
+                        />
+                    </Form.Group>
+                </div>
+            );
         }
     };
 
-    // === FEEDBACK SCREEN ===
+    // Feedback Screen Component
     const FeedbackScreen = ({ onSubmit }) => {
-        const [quality, setQuality] = useState(0);
-        const [difficulty, setDifficulty] = useState(0);
+        const [quality, setQuality] = useState(0)
+        const [difficulty, setDifficulty] = useState(0)
+
         return (
             <div className="finished-screen text-center p-4">
                 <h2>QUESTION SET FINISHED</h2>
@@ -177,115 +179,193 @@ const QuizScreen = ({
                     Submit Rating
                 </Button>
             </div>
-        );
-    };
+        )
+    }
 
-    // === NEXT ACTIONS SCREEN ===
-    const NextActionsScreen = ({
-        onRestart,
-        onLoadSet,
-        onLoadRandomSet,
-        recommendedSets,
-    }) => {
-        const similar = recommendedSets.slice(0, 3);
-        const related = recommendedSets.slice(3, 6);
-        const different = recommendedSets.slice(6, 9);
+    // Next Actions Screen Component
+    const NextActionsScreen = ({ onRestart, onLoadSet, onLoadRandomSet, recommendedSets, onReturnToMenu, currentSet }) => {
+        // Group sets by category
+        const setsByCategory = {};
+        recommendedSets?.forEach(set => {
+            const category = set.category || 'Uncategorized';
+            if (!setsByCategory[category]) {
+                setsByCategory[category] = [];
+            }
+            setsByCategory[category].push(set);
+        });
+
+        // Get unique categories
+        const categories = Object.keys(setsByCategory);
 
         return (
             <div className="finished-screen p-4">
-                <h2 className="text-center">QUESTION SET FINISHED</h2>
-                <p className="text-center">What do you want to do now?</p>
+                <div className="section-container current-section">
+                    <div className="section-header">
+                        <h2>CURRENT</h2>
+                    </div>
 
-                <div className="my-4">
-                    <h5>Restart this set</h5>
-                    <Button onClick={onRestart}>Restart</Button>
+                    <div className="category-modules-header">
+                        <div className="category-label">CATEGORY</div>
+                        <div className="modules-label">MODULES</div>
+                    </div>
+
+                    {/* Current Module Information */}
+                    <div className="current-info mt-3">
+                        <div
+                            className="subcategory-item"
+                            onClick={() => {
+                                console.log("Clicking current set to restart");
+                                if (onRestart) {
+                                    onRestart();
+                                }
+                            }}
+                        >
+                            {currentSet?.category || "General"} - {currentSet?.setName}
+                        </div>
+                    </div>
                 </div>
 
-                <div className="my-4">
-                    <h5>Practice a similar set</h5>
-                    {similar.length > 0 ? (
-                        similar.map((s) => (
-                            <Button
-                                key={s._id}
-                                variant="outline-primary"
-                                className="me-2 mb-2"
-                                onClick={() => onLoadSet(s._id)}
-                            >
-                                {s.setName}
-                                {s.rating ? ` (${s.rating})` : ""}
-                            </Button>
-                        ))
-                    ) : (
-                        <p>No similar sets available.</p>
-                    )}
+                <div className="section-container category-section">
+                    <div className="category-label mb-3">CATEGORY</div>
+
+                    {/* Display Available Categories */}
+                    <div className="subcategories-list">
+                        {categories.length > 0 ? (
+                            categories.map((category, index) => (
+                                <div key={index}>
+                                    <div
+                                        className="subcategory-item"
+                                        onClick={() => {
+                                            if (setsByCategory[category]?.length > 0) {
+                                                onLoadSet(setsByCategory[category][0]._id);
+                                            }
+                                        }}
+                                    >
+                                        {category} ({setsByCategory[category].length})
+                                    </div>
+
+                                    {/* Show available sets in this category */}
+                                    {index < 2 && setsByCategory[category]?.length > 0 && (
+                                        <div className="sets-container mt-2 mb-3">
+                                            {setsByCategory[category].slice(0, 3).map((set, idx) => (
+                                                <div
+                                                    key={idx}
+                                                    className="set-item mb-2"
+                                                    onClick={() => onLoadSet(set._id)}
+                                                >
+                                                    {set.setName} ({set.questions?.length || 0})
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            ))
+                        ) : (
+                            <div className="no-sets-message">
+                                No recommended sets available. Use the buttons below to restart the current set or try a random one.
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="sorting-note">
+                        (SORTED BY CATEGORY)
+                        <div>CLICK ON ANY CATEGORY OR SET TO START</div>
+                    </div>
                 </div>
 
-                <div className="my-4">
-                    <h5>Practice a related set</h5>
-                    {related.length > 0 ? (
-                        related.map((s) => (
-                            <Button
-                                key={s._id}
-                                variant="outline-secondary"
-                                className="me-2 mb-2"
-                                onClick={() => onLoadSet(s._id)}
-                            >
-                                {s.setName}
-                            </Button>
-                        ))
-                    ) : (
-                        <p>No related sets available.</p>
-                    )}
+                <div className="section-container upcoming-section">
+                    <div className="section-header">
+                        <h2>UPCOMING</h2>
+                    </div>
+
+                    <ol className="upcoming-list">
+                        <li>Economics/CIMA</li>
+                        <li>Philosophy/General Knowledge</li>
+                        <li>Pod Quiz/Monday Pod Quiz</li>
+                    </ol>
                 </div>
 
-                <div className="text-center mt-4 flex w-full gap-2">
-                    <Button variant="secondary" onClick={() => onReturnToMenu()}>
-                        <FaHome className="me-1" />
-                        Main Menu
-                    </Button>
-                    <Button variant="outline-danger" onClick={onLoadRandomSet}>
-                        <FaRandom className="me-1" />
+                <div className="actions-row">
+                    <button
+                        className="action-button restart-button"
+                        onClick={() => {
+                            console.log("Restarting current set");
+                            if (onRestart) {
+                                onRestart();
+                            }
+                        }}
+                    >
+                        Restart Current Set
+                    </button>
+                    <button
+                        className="action-button random-button"
+                        onClick={() => {
+                            console.log("Loading random set");
+                            if (onLoadRandomSet) {
+                                onLoadRandomSet();
+                            }
+                        }}
+                    >
+                        <FaRandom className="me-2" />
                         Random Set
-                    </Button>
+                    </button>
+                </div>
+            </div>
+        )
+    }
+
+    // More Info Screen Component
+    const MoreInfoScreen = () => {
+        const currentQuestion = currentSet?.questions?.[currentIndex];
+
+        return (
+            <div className="quiz-container">
+                <div className="quiz-card-container">
+                    <div className="more-info-page">
+                        <h2>Additional Information</h2>
+
+                        <div className="question-section mb-4">
+                            <h4>Question:</h4>
+                            <p className="question-text">{currentQuestion?.question}</p>
+                        </div>
+
+                        <div className="answer-section mb-4">
+                            <h4>Answer:</h4>
+                            <p>{currentQuestion?.answer}</p>
+                        </div>
+
+                        <div className="more-info-section mb-4">
+                            <h4>Additional Information:</h4>
+                            <div className="more-info-content">
+                                {currentQuestion?.moreInfo ? (
+                                    <p>{currentQuestion.moreInfo}</p>
+                                ) : (
+                                    <p>No additional information available for this question.</p>
+                                )}
+                            </div>
+                        </div>
+
+                        <button
+                            className="btn-previous"
+                            onClick={() => setShowMoreInfo(false)}
+                        >
+                            Back to Question
+                        </button>
+                    </div>
                 </div>
             </div>
         );
     };
 
-    // === IMPROVE / ADD REPORT MODAL ===
-    const RatingSelect = ({ label, value, onChange }) => (
-        <Form.Group className="mb-3">
-            <Form.Label>{label}</Form.Label>
-            <div>
-                {[1, 2, 3, 4, 5].map((n) => (
-                    <Button
-                        key={n}
-                        variant={value === n ? "primary" : "outline-primary"}
-                        className="me-1"
-                        onClick={() => onChange(n)}
-                    >
-                        {n}
-                    </Button>
-                ))}
-            </div>
-        </Form.Group>
-    );
-
-    const SuggestionsForm = ({ value, onChange }) => (
-        <Form.Group className="mb-3">
-            <Form.Label>Any suggestions?</Form.Label>
-            <Form.Control
-                as="textarea"
-                rows={3}
-                value={value}
-                onChange={(e) => onChange(e.target.value)}
-            />
-        </Form.Group>
-    );
-
+    // Report Modal Component
     const ReportModal = ({ show, onHide, onSubmit }) => {
-        const [reportRating, setReportRating] = useState(0);
-        const [reportText, setReportText] = useState("");
+        const [reportRating, setReportRating] = useState(0)
+        const [reportText, setReportText] = useState("")
+
+        const handleSubmit = () => {
+            onSubmit({ reportRating, reportText })
+            onHide()
+        }
 
         return (
             <Modal show={show} onHide={onHide}>
@@ -294,111 +374,40 @@ const QuizScreen = ({
                 </Modal.Header>
                 <Modal.Body>
                     <p>
-                        We'd love to know how we can improve this question set! Please rate
-                        its quality and share any suggestions.
+                        We'd love to know how we can improve this question set! Please rate its quality and share any suggestions.
                     </p>
-                    <RatingSelect
-                        label="Rate Overall Quality"
-                        value={reportRating}
-                        onChange={setReportRating}
-                    />
-                    <SuggestionsForm
-                        value={reportText}
-                        onChange={setReportText}
-                    />
+                    <Form.Group className="mb-3">
+                        <Form.Label>Rate Overall Quality</Form.Label>
+                        <div>
+                            {[1, 2, 3, 4, 5].map((n) => (
+                                <Button
+                                    key={n}
+                                    variant={reportRating === n ? "primary" : "outline-primary"}
+                                    className="me-1"
+                                    onClick={() => setReportRating(n)}
+                                >
+                                    {n}
+                                </Button>
+                            ))}
+                        </div>
+                    </Form.Group>
+                    <Form.Group className="mb-3">
+                        <Form.Label>Any suggestions?</Form.Label>
+                        <Form.Control as="textarea" rows={3} value={reportText} onChange={(e) => setReportText(e.target.value)} />
+                    </Form.Group>
                 </Modal.Body>
                 <Modal.Footer>
                     <Button variant="secondary" onClick={onHide}>
                         Close
                     </Button>
-                    <Button
-                        variant="primary"
-                        disabled={reportRating === 0}
-                        onClick={() => {
-                            onSubmit({ reportRating, reportText });
-                            onHide();
-                        }}
-                    >
+                    <Button variant="primary" onClick={handleSubmit}>
                         Submit Report
                     </Button>
                 </Modal.Footer>
             </Modal>
-        );
-    };
-
-    const CommentItem = ({ comment }) => (
-        <div className="comment-item">
-            <div className="comment-header">
-                <strong>{comment.user || comment.username || 'Anonymous'}</strong>
-                <small className="text-muted">
-                    {new Date(comment.date || comment.createdAt).toLocaleString()}
-                </small>
-            </div>
-            <p className="mb-0">{comment.text || comment.content}</p>
-        </div>
-    );
-
-    // Add renderAnswerInput function inside the component
-    const renderAnswerInput = () => {
-        if (showAnswer) {
-            // Show answer result
-            return (
-                <div className="answer-result-container mt-3">
-                    {answerResult && (
-                        <div className={`answer-result ${answerResult.correct ? 'correct' : answerResult.partiallyCorrect ? 'partially-correct' : 'incorrect'}`}>
-                            <div className="user-answer mb-2">
-                                <h5>Your Answer:</h5>
-                                <p>{answerResult.userAnswer}</p>
-                            </div>
-                            <div className="correct-answer mb-2">
-                                <h5>Correct Answer:</h5>
-                                <p>{answerResult.correctAnswer}</p>
-                            </div>
-                            {answerResult.similarity < 100 && (
-                                <div className="similarity mb-2">
-                                    <p>Similarity: {Math.round(answerResult.similarity)}%</p>
-                                </div>
-                            )}
-                            {answerResult.moreInfo && (
-                                <div className="more-info mt-3">
-                                    <h5>Additional Information:</h5>
-                                    <p>{answerResult.moreInfo}</p>
-                                </div>
-                            )}
-                        </div>
-                    )}
-                </div>
-            );
-        } else {
-            // Show answer input field
-            return (
-                <div className="answer-input-container mt-3">
-                    <Form.Group>
-                        <Form.Label>Your Answer:</Form.Label>
-                        <Form.Control
-                            as="textarea"
-                            rows={3}
-                            value={userAnswer}
-                            onChange={onUserAnswerChange}
-                            placeholder="Type your answer here..."
-                        />
-                    </Form.Group>
-                    <Button
-                        className="mt-2"
-                        onClick={onSubmitAnswer}
-                        disabled={!userAnswer?.trim()}
-                    >
-                        Submit Answer
-                    </Button>
-                </div>
-            );
-        }
-    };
-
-    // —————————————————————————————
-    // 1) If finished but not yet rated → show FeedbackScreen
-    // 2) If finished and rated      → show NextActionsScreen
-    // 3) Otherwise show normal quiz
+        )
+    }
+    // If finished but not yet rated → show FeedbackScreen
     if (isFinished) {
         return !feedbackSubmitted ? (
             <FeedbackScreen onSubmit={handleSubmitFeedback} />
@@ -408,20 +417,24 @@ const QuizScreen = ({
                 onLoadSet={onLoadSet}
                 onLoadRandomSet={onLoadRandomSet}
                 recommendedSets={recommendedSets}
+                onReturnToMenu={onReturnToMenu}
+                currentSet={currentSet}
             />
-        );
+        )
     }
 
-    // —————————————————————————————
-    //  Normal quiz view
+    // Show More Info screen if requested
+    if (showMoreInfo) {
+        return <MoreInfoScreen />
+    }
+
+    // Normal quiz view
     return (
         <div className="quiz-container">
             {loading ? (
                 <div className="loading-container">
                     <Spinner animation="border" variant="primary" className="m-2" />
-                    <p className="loading-text">
-                        Loading quiz data, please wait...
-                    </p>
+                    <p className="loading-text">Loading quiz data, please wait...</p>
                 </div>
             ) : (
                 <div className="quiz-card-container">
@@ -433,35 +446,13 @@ const QuizScreen = ({
                             </div>
 
                             {/* Question Text */}
-                            <div className="question-text">
-                                {currentSet.questions[currentIndex].question}
-                            </div>
+                            <div className="question-text">{currentSet.questions[currentIndex].question}</div>
 
-                            {/* User Answer Input (only when answer not shown) */}
-                            {!showAnswer && (
-                                <div className="answer-input-container mt-3">
-                                    <Form.Group>
-                                        <Form.Label>Your Answer:</Form.Label>
-                                        <Form.Control
-                                            as="textarea"
-                                            rows={3}
-                                            value={userAnswer}
-                                            onChange={onUserAnswerChange}
-                                            placeholder="Type your answer here..."
-                                        />
-                                    </Form.Group>
-                                    <Button
-                                        className="mt-2"
-                                        onClick={onSubmitAnswer}
-                                        disabled={!userAnswer?.trim()}
-                                    >
-                                        Submit Answer
-                                    </Button>
-                                </div>
-                            )}
+                            {/* Answer Input or Result */}
+                            {renderAnswerInput()}
 
-                            {/* Answer Display */}
-                            {showAnswer && (
+                            {/* Answer Display when shown */}
+                            {showAnswer && !answerResult && (
                                 <div className="answer-container">
                                     <div className="title">Answer:</div>
                                     <p>{currentSet.questions[currentIndex].answer}</p>
@@ -471,139 +462,79 @@ const QuizScreen = ({
                             {/* Tags and Serial Number */}
                             <div className="tags-container">
                                 <span className="tag tag-category">{currentSet.setName}</span>
-                                <span className="tag tag-primary">{currentSet.category || "Category"}</span>
-                                <span className="tag tag-primary">{currentSet.subCategory1 || "Subcategory"}</span>
-                                <span className="tag tag-primary">{currentSet.subCategory2 || "Level"}</span>
-                                <span className="serial-number">Serial: {currentSet.serialNumber || "xxxx"}</span>
+                                {currentSet.category && <span className="tag tag-primary">{currentSet.category}</span>}
+                                {currentSet.subCategory1 && <span className="tag tag-primary">{currentSet.subCategory1}</span>}
+                                {currentSet.subCategory2 && <span className="tag tag-primary">{currentSet.subCategory2}</span>}
+                                {currentSet.serialNumber && <span className="serial-number">Serial: {currentSet.serialNumber}</span>}
                                 <FaArrowRight className="arrow-icon" />
                             </div>
 
                             {/* Show Info link */}
-                            <a href="#" className="show-info" onClick={(e) => {
-                                e.preventDefault();
-                                onToggleSetInfo();
-                            }}>
-                                Show Info
-                            </a>
+                            {/* <a
+                                href="#"
+                                className="show-info"
+                                onClick={(e) => {
+                                    e.preventDefault()
+                                    onToggleSetInfo()
+                                }}
+                            >
+                                {showSetInfo ? "Hide Info" : "Show Info"}
+                            </a> */}
 
                             {/* Action Buttons */}
-                            <div className="buttons-row">
-                                <button
-                                    className="nav-button button-outline"
-                                    onClick={() => setShowReport(true)}
-                                >
-                                    Improve / Add Report
-                                </button>
-
-                                <button
-                                    className="nav-button button-secondary"
-                                    onClick={onPrevious}
-                                    disabled={currentIndex === 0}
-                                >
-                                    Previous
-                                </button>
-
-                                <button
-                                    className="nav-button button-primary"
-                                    onClick={() => {
-                                        if (showAnswer && currentIndex === currentSet.questions.length - 1) {
-                                            handleFinish();
-                                        } else {
-                                            onNext();
-                                        }
-                                    }}
-                                >
-                                    {showAnswer
-                                        ? currentIndex === currentSet.questions.length - 1
-                                            ? "Finish Set"
-                                            : "Next Question"
-                                        : "Show Answer"}
-                                </button>
-                            </div>
-
-                            {/* Only show More Info button when answer is displayed */}
-                            {showAnswer && (
-                                <button
-                                    className="nav-button button-primary more-info-container"
-                                    onClick={onShowModal}
-                                >
-                                    More Info
-                                </button>
-                            )}
-
-                            {/* Comments Section (only when answer is shown) */}
-                            {showAnswer && showComments && (
-                                <div className="comments-container">
-                                    <div className="d-flex justify-content-between align-items-center mb-2">
-                                        <h5>
-                                            <FaComment className="me-2" />
-                                            Comments
-                                        </h5>
-                                        <Button
-                                            variant="link"
-                                            onClick={() => setShowComments(!showComments)}
-                                        >
-                                            Hide Comments
-                                        </Button>
-                                    </div>
-
-                                    <div className="comments-list mb-3">
-                                        {loadingComments ? (
-                                            <div className="text-center py-3">
-                                                <Spinner animation="border" size="sm" />
-                                                <span className="ms-2">Loading comments...</span>
-                                            </div>
-                                        ) : comments.length > 0 ? (
-                                            comments.map(comment => (
-                                                <CommentItem key={comment.id} comment={comment} />
-                                            ))
-                                        ) : (
-                                            <p className="text-muted">No comments yet. Be the first to comment!</p>
-                                        )}
-                                    </div>
-
-                                    <Form.Group className="mb-3">
-                                        <Form.Control
-                                            as="textarea"
-                                            rows={2}
-                                            value={commentText}
-                                            onChange={(e) => setCommentText(e.target.value)}
-                                            placeholder="Add a comment..."
-                                        />
-                                    </Form.Group>
-
-                                    <Button
-                                        variant="primary"
-                                        size="sm"
-                                        onClick={handleAddComment}
-                                        disabled={!commentText.trim()}
-                                    >
-                                        Post Comment
-                                    </Button>
+                            <div className="buttons-container">
+                                <div className="left-buttons">
+                                    <button className="btn-report" onClick={() => setShowReport(true)}>
+                                        Improve / Add Report
+                                    </button>
+                                    <button className="btn-previous" onClick={onPrevious} disabled={currentIndex === 0}>
+                                        Previous
+                                    </button>
                                 </div>
-                            )}
-
-                            {/* Show Comments button (only when answer is shown) */}
-                            {showAnswer && !showComments && (
-                                <Button
-                                    variant="outline-secondary"
-                                    className="mt-3 w-100"
-                                    onClick={() => setShowComments(true)}
-                                >
-                                    <FaComment className="me-2" />
-                                    Show Comments
-                                </Button>
-                            )}
-
+                                <div className="right-buttons">
+                                    {!showAnswer && !answerResult ? (
+                                        <button
+                                            className="btn-show-answer"
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                onSubmitAnswer();
+                                            }}
+                                            disabled={!userAnswer?.trim()}
+                                        >
+                                            Submit Answer
+                                        </button>
+                                    ) : (
+                                        <button
+                                            className="btn-show-answer"
+                                            onClick={() => {
+                                                if (showAnswer && currentIndex === currentSet?.questions?.length - 1) {
+                                                    handleFinish()
+                                                } else {
+                                                    onNext()
+                                                }
+                                            }}
+                                        >
+                                            {currentIndex === currentSet?.questions?.length - 1
+                                                ? "Finish Set"
+                                                : "Next Question"}
+                                        </button>
+                                    )}
+                                    <button
+                                        className="btn-show-answer"
+                                        onClick={() => setShowMoreInfo(true)}
+                                        disabled={!showAnswer}
+                                    >
+                                        More Info
+                                    </button>
+                                </div>
+                            </div>
+                            {/* More Info button when answer is displayed */}
                             {/* Home Button */}
                             <div className="navigation-row">
                                 <button className="home-icon" onClick={onReturnToMenu}>
                                     <FaHome />
                                 </button>
                             </div>
-
-                            {/* Add this right after the question content */}
-                            {!isFinished && !feedbackSubmitted && renderAnswerInput()}
                         </>
                     ) : (
                         <div className="no-questions-message text-center my-5">
@@ -616,36 +547,9 @@ const QuizScreen = ({
             )}
 
             {/* External Modals */}
-            <Modal show={showModal} onHide={onHideModal}>
-                <Modal.Header closeButton>
-                    <Modal.Title>More Info</Modal.Title>
-                </Modal.Header>
-                <Modal.Body>
-                    <p>
-                        {currentSet?.questions?.[currentIndex]?.moreInfo ||
-                            "No additional information available."}
-                    </p>
-                </Modal.Body>
-                <Modal.Footer>
-                    <Button variant="secondary" onClick={onHideModal}>
-                        Close
-                    </Button>
-                </Modal.Footer>
-            </Modal>
-
-            <ReportModal
-                show={showReport}
-                onHide={() => setShowReport(false)}
-                onSubmit={(data) => {
-                    try {
-                        const response = addReport(data.reportRating, data.reportText, currentSet.setCode)
-                    } catch (error) {
-                        console.log(error)
-                    }
-                }}
-            />
+            <ReportModal show={showReport} onHide={() => setShowReport(false)} onSubmit={handleSubmitReport} />
         </div>
-    );
-};
+    )
+}
 
-export default QuizScreen;
+export default QuizScreen
