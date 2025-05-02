@@ -76,7 +76,7 @@ const SetList = () => {
                         <div className="set-grid">
                             {groupSets.map((set) => (
                                 <Link
-                                    to={`/quiz/${set.setCode}`}
+                                    to={`/module/${set.setCode}`}
                                     key={set.setCode}
                                     className="set-card"
                                 >

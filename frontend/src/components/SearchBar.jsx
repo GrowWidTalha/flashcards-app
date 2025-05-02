@@ -64,7 +64,7 @@ const SearchBar = () => {
                     {results.length > 0 ? (
                         results.map((set) => (
                             <Link
-                                to={`/quiz/${set.setCode}`}
+                                to={`/module/${set.setCode}`}
                                 key={set.setCode}
                                 className="search-result-item"
                                 onClick={() => setShowResults(false)}

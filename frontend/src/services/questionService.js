@@ -1,11 +1,10 @@
 import axios from 'axios';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+import { API_BASE_URL } from '../handlers/apiHandlers';
 
 // Get all questions
 export const getAllQuestions = async () => {
     try {
-        const response = await axios.get(`${API_URL}/questions`);
+        const response = await axios.get(`${API_BASE_URL}/questions`);
         return response.data;
     } catch (error) {
         console.error('Error fetching questions:', error);
@@ -16,7 +15,7 @@ export const getAllQuestions = async () => {
 // Get questions by set code
 export const getQuestionsBySet = async (setCode) => {
     try {
-        const response = await axios.get(`${API_URL}/questions/set/${setCode}`);
+        const response = await axios.get(`${API_BASE_URL}/questions/set/${setCode}`);
         return response.data;
     } catch (error) {
         console.error(`Error fetching questions for set ${setCode}:`, error);
@@ -27,7 +26,7 @@ export const getQuestionsBySet = async (setCode) => {
 // Get questions by module code
 export const getQuestionsByModule = async (moduleCode) => {
     try {
-        const response = await axios.get(`${API_URL}/questions/module/${moduleCode}`);
+        const response = await axios.get(`${API_BASE_URL}/questions/module/${moduleCode}`);
         return response.data;
     } catch (error) {
         console.error(`Error fetching questions for module ${moduleCode}:`, error);
@@ -38,7 +37,7 @@ export const getQuestionsByModule = async (moduleCode) => {
 // Create a new question
 export const createQuestion = async (questionData) => {
     try {
-        const response = await axios.post(`${API_URL}/questions`, questionData);
+        const response = await axios.post(`${API_BASE_URL}/questions`, questionData);
         return response.data;
     } catch (error) {
         console.error('Error creating question:', error);
@@ -49,7 +48,7 @@ export const createQuestion = async (questionData) => {
 // Update a question
 export const updateQuestion = async (questionId, questionData) => {
     try {
-        const response = await axios.put(`${API_URL}/questions/${questionId}`, questionData);
+        const response = await axios.put(`${API_BASE_URL}/questions/${questionId}`, questionData);
         return response.data;
     } catch (error) {
         console.error(`Error updating question ${questionId}:`, error);
@@ -60,7 +59,7 @@ export const updateQuestion = async (questionId, questionData) => {
 // Delete a question
 export const deleteQuestion = async (questionId) => {
     try {
-        const response = await axios.delete(`${API_URL}/questions/${questionId}`);
+        const response = await axios.delete(`${API_BASE_URL}/questions/${questionId}`);
         return response.data;
     } catch (error) {
         console.error(`Error deleting question ${questionId}:`, error);
@@ -71,7 +70,7 @@ export const deleteQuestion = async (questionId) => {
 // Upload user questions
 export const uploadUserQuestions = async (questions, moduleCode, setCode, order) => {
     try {
-        const response = await axios.post(`${API_URL}/questions/upload`, {
+        const response = await axios.post(`${API_BASE_URL}/questions/upload`, {
             questions,
             moduleCode,
             setCode,

@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { Container, Row, Col, Card, Spinner, Alert, Badge } from 'react-bootstrap';
 import { feedbackApi } from '../services/api';
+import { FaComments, FaExclamationCircle } from 'react-icons/fa';
 
 const Feedback = () => {
     const [feedback, setFeedback] = useState([]);
@@ -10,10 +12,17 @@ const Feedback = () => {
         const fetchFeedback = async () => {
             try {
                 const response = await feedbackApi.getAll();
-                setFeedback(response.data);
+
+                if (response && response.data) {
+                    setFeedback(response.data);
+                } else {
+                    setFeedback([]);
+                }
                 setLoading(false);
             } catch (err) {
-                setError('Failed to fetch feedback');
+                console.error("Error fetching feedback:", err);
+                setError('Failed to fetch feedback. Please check if the API is available.');
+                setFeedback([]);
                 setLoading(false);
             }
         };
@@ -21,29 +30,60 @@ const Feedback = () => {
         fetchFeedback();
     }, []);
 
-    if (loading) return <div className="flex justify-center items-center h-screen">Loading...</div>;
-    if (error) return <div className="text-red-500 text-center">{error}</div>;
+    if (loading) return (
+        <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '70vh' }}>
+            <Spinner animation="border" variant="primary" />
+        </div>
+    );
+
+    const renderStars = (rating) => {
+        if (!rating || isNaN(rating)) return '';
+        return '★'.repeat(Math.min(rating, 5));
+    };
 
     return (
-        <div className="container mx-auto px-4 py-8">
-            <h1 className="text-3xl font-bold mb-6">Submitted Feedback</h1>
-            <div className="grid gap-4">
-                {feedback.map((item) => (
-                    <div key={item._id} className="bg-white p-6 rounded-lg shadow-md">
-                        <div className="flex justify-between items-start mb-4">
-                            <div>
-                                <h3 className="text-lg font-semibold">{item.userName}</h3>
-                                <p className="text-gray-600">{new Date(item.createdAt).toLocaleDateString()}</p>
-                            </div>
-                            <div className="text-yellow-500">
-                                {'★'.repeat(item.rating)}
-                            </div>
-                        </div>
-                        <p className="text-gray-700">{item.message}</p>
-                    </div>
-                ))}
-            </div>
-        </div>
+        <Container>
+            <h1 className="mb-4">
+                <FaComments className="me-2 text-primary" />
+                User Feedback
+            </h1>
+
+            {error && (
+                <Alert variant="warning" dismissible onClose={() => setError(null)}>
+                    <FaExclamationCircle className="me-2" />
+                    {error}
+                </Alert>
+            )}
+
+            <Row>
+                {feedback.length > 0 ? feedback.map((item) => (
+                    <Col md={6} lg={4} className="mb-4" key={item._id || Math.random()}>
+                        <Card className="h-100 shadow-sm">
+                            <Card.Header className="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>{item.userName || item.user?.name || 'Anonymous'}</strong>
+                                </div>
+                                <Badge bg="warning" text="dark">
+                                    {renderStars(item.rating)}
+                                </Badge>
+                            </Card.Header>
+                            <Card.Body>
+                                <Card.Text>{item.message || 'No message provided'}</Card.Text>
+                            </Card.Body>
+                            <Card.Footer className="text-muted">
+                                {item.createdAt ?
+                                    new Date(item.createdAt).toLocaleDateString() :
+                                    'Unknown date'}
+                            </Card.Footer>
+                        </Card>
+                    </Col>
+                )) : (
+                    <Col xs={12}>
+                        <Alert variant="info">No feedback submitted yet.</Alert>
+                    </Col>
+                )}
+            </Row>
+        </Container>
     );
 };
 

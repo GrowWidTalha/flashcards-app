@@ -26,23 +26,24 @@ export const feedbackApi = {
 
 // Ratings API calls
 export const ratingsApi = {
-    getAll: () => api.get('/ratings'),
-    create: (data) => api.post('/ratings', data),
+    getAll: () => api.get('/rating/user'),
+    getAllForSet: (setCode) => api.get(`/rating/set/${setCode}`),
+    create: (data) => api.post('/rating', data),
 };
 
-// Reports API calls
+// Reports API calls (Complaints)
 export const reportsApi = {
-    getAll: () => api.get('/reports'),
-    getQuizPerformance: () => api.get('/reports/quiz-performance'),
-    getSystemMetrics: () => api.get('/reports/system-metrics'),
+    getAll: () => api.get('/report/user'),
+    getAllForSet: (setCode) => api.get(`/report/set/${setCode}`),
+    create: (data) => api.post('/report', data),
 };
 
-// Users API calls
+// Users API calls (via admin)
 export const usersApi = {
-    getAll: () => api.get('/users'),
-    getById: (id) => api.get(`/users/${id}`),
-    update: (id, data) => api.patch(`/users/${id}`, data),
-    delete: (id) => api.delete(`/users/${id}`),
+    getAll: () => api.get('/admin/users'),
+    getById: (id) => api.get(`/admin/users/${id}`),
+    update: (id, data) => api.patch(`/admin/users/${id}`),
+    delete: (id) => api.delete(`/admin/users/${id}`),
 };
 
 // Auth API calls

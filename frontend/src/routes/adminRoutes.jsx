@@ -6,24 +6,29 @@ import AdminPanel from '../components/AdminPanel';
 import Ratings from '../pages/Ratings';
 import Reports from '../pages/Reports';
 import Users from '../pages/Users';
+import Feedback from '../pages/Feedback';
 
 // Define admin routes
 const adminRoutes = [
     {
-        path: '/admin',
-        element: <ProtectedRoute><AdminPanel /></ProtectedRoute>,
+        path: '',
+        element: <ProtectedRoute><AdminPanel /></ProtectedRoute>
     },
     {
-        path: '/admin/ratings',
-        element: <ProtectedRoute><Ratings /></ProtectedRoute>,
+        path: 'users',
+        element: <ProtectedRoute><Users /></ProtectedRoute>
     },
     {
-        path: '/admin/reports',
-        element: <ProtectedRoute><Reports /></ProtectedRoute>,
+        path: 'ratings',
+        element: <ProtectedRoute><Ratings /></ProtectedRoute>
     },
     {
-        path: '/admin/users',
-        element: <ProtectedRoute><Users /></ProtectedRoute>,
+        path: 'reports',
+        element: <ProtectedRoute><Reports /></ProtectedRoute>
+    },
+    {
+        path: 'feedback',
+        element: <ProtectedRoute><Feedback /></ProtectedRoute>
     }
 ];
 

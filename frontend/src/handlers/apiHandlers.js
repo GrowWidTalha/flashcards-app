@@ -1,9 +1,9 @@
 import axios from "axios";
 
-export const API_BASE_URL = "http://localhost:5000/api";
-const API_BASE_URL_LOCAL = "http://localhost:5000/api";
-// export const API_BASE_URL = "https://flashcards-app-backend.vercel.app/api";
-// const API_BASE_URL_LOCAL = "https://flashcards-app-backend.vercel.app/api";
+// export const API_BASE_URL = "http://localhost:5000/api";
+// const API_BASE_URL_LOCAL = "http://localhost:5000/api";
+export const API_BASE_URL = "https://flashcards-app-backend.vercel.app/api";
+const API_BASE_URL_LOCAL = "https://flashcards-app-backend.vercel.app/api";
 
 export const fetchAllQuestions = async () => {
     try {
@@ -81,7 +81,7 @@ export const registerProgress = async (setCode, questionCount) => {
     try {
         const token = localStorage.getItem('token');
         const response = await axios.post(
-            `${API_BASE_URL}/progress/register`,
+            `${API_BASE_URL}/progress/record`,
             {
                 setCode,
                 questionCount
@@ -124,7 +124,7 @@ export const recordQuestionFeedback = async (rating, difficulty, setCode) => {
     try {
         const token = localStorage.getItem('token');
         const response = await axios.post(
-            `${API_BASE_URL}/feedback/record`,
+            `${API_BASE_URL}/progress/record`,
             {
                 rating,
                 difficulty,

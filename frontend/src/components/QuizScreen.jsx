@@ -12,6 +12,7 @@ import {
     getQuestionComments,
 } from "../handlers/apiHandlers"
 import "./QuizScreen.css"
+import { createRating } from "../services/ratingService"
 
 const QuizScreen = ({
     currentSet,
@@ -66,7 +67,7 @@ const QuizScreen = ({
     // Handle feedback submission
     const handleSubmitFeedback = async ({ quality, difficulty }) => {
         try {
-            await recordQuestionFeedback(quality, difficulty, currentSet.setCode)
+            await createRating(currentSet.setCode, quality, difficulty)
         } catch (error) {
             console.error("Error recording feedback:", error)
         }

@@ -9,6 +9,8 @@ const Register = () => {
     const [step, setStep] = useState(1);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
+    const [registrationSuccess, setRegistrationSuccess] = useState(false);
+    const [registeredEmail, setRegisteredEmail] = useState("");
 
     const {
         register,
@@ -60,13 +62,39 @@ const Register = () => {
                 throw new Error(json.message || "Registration failed");
             }
 
-            if (json.token) {
-                localStorage.setItem("token", json.token);
-                navigate("/");
-            }
+            // User registered successfully, but email not verified yet
+            // Do not store token until email is verified
+            setRegisteredEmail(data.email);
+            setRegistrationSuccess(true);
         } catch (err) {
             console.error("Registration error:", err);
             setError(err.message || "An unexpected error occurred");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleResendVerification = async () => {
+        if (!registeredEmail) return;
+
+        setLoading(true);
+        try {
+            const res = await fetch(API_BASE_URL + "/auth/resend-verification", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email: registeredEmail })
+            });
+
+            const json = await res.json();
+
+            if (!res.ok) {
+                throw new Error(json.message || "Failed to resend verification email");
+            }
+
+            alert("Verification email has been resent! Please check your inbox.");
+        } catch (err) {
+            console.error("Resend verification error:", err);
+            alert(err.message || "Failed to resend verification email");
         } finally {
             setLoading(false);
         }
@@ -109,6 +137,52 @@ const Register = () => {
         "Literature",
         "Pop Culture"
     ];
+
+    if (registrationSuccess) {
+        return (
+            <Container className="auth-container">
+                <div className="auth-card" style={{ backgroundColor: "white", borderRadius: "20px", padding: "20px" }}>
+                    <div className="text-center mb-4">
+                        <h2>Registration Successful!</h2>
+                    </div>
+
+                    <Alert variant="info">
+                        <p>
+                            Thank you for registering! A verification email has been sent to <strong>{registeredEmail}</strong>.
+                        </p>
+                        <p>
+                            Please check your inbox and follow the instructions to verify your email address.
+                        </p>
+                        <p>
+                            You will not be able to access your account until you verify your email.
+                        </p>
+                    </Alert>
+
+                    <div className="d-grid gap-2 mt-4">
+                        <Button
+                            variant="primary"
+                            onClick={handleResendVerification}
+                            disabled={loading}
+                        >
+                            {loading ? (
+                                <>
+                                    <Spinner size="sm" animation="border" className="me-2" />
+                                    Sending...
+                                </>
+                            ) : "Resend Verification Email"}
+                        </Button>
+
+                        <Button
+                            variant="outline-primary"
+                            onClick={() => navigate("/login")}
+                        >
+                            Go to Login
+                        </Button>
+                    </div>
+                </div>
+            </Container>
+        );
+    }
 
     return (
         <Container className="auth-container">
@@ -328,9 +402,7 @@ const Register = () => {
                     </div>
                 </Form>
             </div>
-
         </Container>
-        // </>
     );
 };
 

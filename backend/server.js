@@ -6,6 +6,7 @@ const connectDB = require('./config/db');
 // Route modules
 const uploadRoutes = require('./routes/uploadRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const userRoutes = require('./routes/userRoutes');
 const questionRoutes = require('./routes/questionRoutes');
 const moduleRoutes = require('./routes/moduleRoutes');
 const setRoutes = require('./routes/setRoutes');
@@ -16,6 +17,7 @@ const ratingRoutes = require("./routes/ratingRoutes");
 const reportRoutes = require("./routes/reportRoutes");
 const feedbackRoutes = require("./routes/feedbackRoutes");
 const commentRoutes = require('./routes/commentRoutes');
+const quizAttemptRoutes = require('./routes/quizAttemptRoutes');
 const app = express();
 connectDB();
 
@@ -41,6 +43,7 @@ app.use("/api/auth", authRoutes)
 app.use("/api/progress", progressRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/admin', userRoutes);
 app.use('/api/questions', questionRoutes);
 app.use('/api/modules', moduleRoutes);
 app.use('/api/sets', setRoutes);
@@ -49,6 +52,7 @@ app.use("/api/rating", ratingRoutes);
 app.use("/api/report", reportRoutes);
 app.use('/api/feedback', feedbackRoutes);
 app.use('/api/comments', commentRoutes);
+app.use('/api/quiz-attempts', quizAttemptRoutes);
 
 // Start server
 const PORT = process.env.PORT || 5000;

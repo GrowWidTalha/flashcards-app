@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { getModuleByCode } from "../services/moduleService"
 import { getSetByCode } from "../services/setService"
+import { recordAnswer, completeAttempt } from "../services/quizAttemptService"
+import { createRating } from "../services/ratingService"
 import QuizScreen from "../components/QuizScreen"
 import LoadingScreen from "../components/LoadingScreen"
 import "../components/ModuleSet.css"
@@ -31,6 +33,7 @@ const ModuleQuizPage = () => {
     const [userAnswer, setUserAnswer] = useState("")
     const [answerResult, setAnswerResult] = useState(null)
     const [savedAnswers, setSavedAnswers] = useState({})
+    const [currentAttemptId, setCurrentAttemptId] = useState(null)
 
     // Fetch module and its sets
     useEffect(() => {
@@ -93,6 +96,7 @@ const ModuleQuizPage = () => {
                 setUserAnswer("")
                 setAnswerResult(null)
                 setSavedAnswers({})
+                setCurrentAttemptId(null)
                 setLoadingSet(false)
             } catch (err) {
                 setError(`Failed to load set ${setCode}. Please try again later.`)
@@ -102,6 +106,14 @@ const ModuleQuizPage = () => {
         },
         [sets],
     )
+
+    // Load a random set
+    const loadRandomSet = useCallback(() => {
+        if (sets.length === 0) return;
+        const randomIndex = Math.floor(Math.random() * sets.length);
+        const randomSet = sets[randomIndex];
+        loadSet(randomSet.setCode, randomIndex);
+    }, [sets, loadSet]);
 
     // Handle navigation to next question
     const handleNextQuestion = useCallback(() => {
@@ -121,10 +133,28 @@ const ModuleQuizPage = () => {
             setUserAnswer(savedAnswer);
 
         } else if (currentQuestionIndex === currentSet.questions.length - 1) {
-            // Last question - show rating UI
-            setShowSetRating(true)
+            // Last question - complete the attempt and show rating UI
+            if (currentAttemptId) {
+                try {
+                    completeAttempt(currentAttemptId)
+                        .then(() => {
+                            setShowSetRating(true);
+                        })
+                        .catch(err => {
+                            console.error("Error completing quiz attempt:", err);
+                            // Still show the rating UI even if there's an error
+                            setShowSetRating(true);
+                        });
+                } catch (error) {
+                    console.error("Error calling completeAttempt:", error);
+                    // Still show the rating UI
+                    setShowSetRating(true);
+                }
+            } else {
+                setShowSetRating(true);
+            }
         }
-    }, [currentQuestionIndex, currentSet, showAnswer, savedAnswers])
+    }, [currentQuestionIndex, currentSet, showAnswer, savedAnswers, currentAttemptId])
 
     // Handle navigation to previous question
     const handlePreviousQuestion = useCallback(() => {
@@ -155,6 +185,15 @@ const ModuleQuizPage = () => {
                 setSavingRating(true)
                 setSetRating(rating)
 
+                // Save rating to backend
+                // Using difficultyRating same as overallRating for simplicity
+                if (currentSet && currentSet.setCode) {
+                    await createRating(currentSet.setCode, rating, rating)
+                    console.log("Rating saved successfully")
+                } else {
+                    console.error("Cannot save rating: missing set information")
+                }
+
                 // Mark this set as completed
                 const newCompletedSets = [...completedSets]
                 newCompletedSets[currentSetIndex] = true
@@ -164,9 +203,11 @@ const ModuleQuizPage = () => {
             } catch (error) {
                 console.error("Error saving rating:", error)
                 setSavingRating(false)
+                // Show error message to user
+                alert("Failed to save your rating. Please try again.")
             }
         },
-        [completedSets, currentSetIndex],
+        [completedSets, currentSetIndex, currentSet]
     )
 
     // Handle starting next set
@@ -182,6 +223,8 @@ const ModuleQuizPage = () => {
 
         // Get the current question and its ID/index
         const currentQuestion = currentSet.questions[currentQuestionIndex];
+        if (!currentQuestion) return;
+
         const questionId = currentQuestion._id || `q_${currentQuestionIndex}`;
 
         // Save this answer to our savedAnswers state
@@ -195,6 +238,31 @@ const ModuleQuizPage = () => {
             userAnswer: userAnswer,
             correctAnswer: currentQuestion.answer
         });
+
+        // Record the answer in the backend
+        try {
+            recordAnswer(
+                currentSet._id,
+                currentSet.setCode,
+                questionId,
+                currentQuestion.question,
+                userAnswer,
+                currentQuestion.answer
+            )
+                .then(response => {
+                    // Save the attempt ID for completing later
+                    if (response.attemptId) {
+                        setCurrentAttemptId(response.attemptId);
+                    }
+                })
+                .catch(err => {
+                    console.error("Error recording answer:", err);
+                    // Continue anyway since we don't want to block the user
+                });
+        } catch (err) {
+            console.error("Error in recordAnswer call:", err);
+            // Continue - don't block the user experience due to backend issues
+        }
 
         // Show the correct answer
         setShowAnswer(true);

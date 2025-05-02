@@ -30,6 +30,10 @@ const UserSchema = new mongoose.Schema({
         type: Map,
         of: String,
     },
+    isVerified: {
+        type: Boolean,
+        default: false
+    },
     attemptedQuizzes: [String],
     addedFeedback: [{ type: mongoose.Schema.Types.ObjectId, ref: "Feedback" }],
 }, {

@@ -37,7 +37,7 @@ const AppRoutes = () => {
                 {adminRoutes.map(route => (
                     <Route
                         key={route.path}
-                        path={route.path.replace('/admin/', '')}
+                        path={route.path}
                         element={route.element}
                     />
                 ))}
