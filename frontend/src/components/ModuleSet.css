@@ -73,6 +73,7 @@
 .home-header {
     display: flex;
     justify-content: space-between;
+    gap: 20px;
     align-items: center;
     padding: 20px;
     margin-bottom: 20px;

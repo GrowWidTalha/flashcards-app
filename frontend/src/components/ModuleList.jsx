@@ -42,10 +42,10 @@ const ModuleList = ({ refreshTrigger = 0 }) => {
 
     return (
         <div className="module-list-container">
-            <h2>Select a Module</h2>
+            <h2 className='text-white' style={{ color: 'white' }}>Select a Module</h2>
             {modules.length === 0 ? (
                 <div className="text-center py-5">
-                    <p>No modules available. Upload questions to create modules.</p>
+                    <p className='text-white'>No modules available. Upload questions to create modules.</p>
                 </div>
             ) : (
                 <div className="module-grid">
