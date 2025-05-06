@@ -17,7 +17,7 @@ import {
     FaHistory
 } from "react-icons/fa";
 import "./Quiz.css";
-import FileUploadModel from "./FileUploadModel";
+import FileUploadModal from "./FileUploadModal";
 
 const SetSelectionScreen = ({
     allSets,
@@ -28,6 +28,7 @@ const SetSelectionScreen = ({
     onShowMySets
 }) => {
     const [searchTerm, setSearchTerm] = React.useState("");
+    const [showUploadModal, setShowUploadModal] = React.useState(false);
 
     const filteredSets = allSets.filter(
         (set) =>
@@ -37,6 +38,11 @@ const SetSelectionScreen = ({
                 set.setCode.toLowerCase().includes(searchTerm.toLowerCase())
             )
     );
+
+    const handleUploadComplete = () => {
+        setShowUploadModal(false);
+        onFileUpload && onFileUpload();
+    };
 
     return (
         <Container className="set-selection py-4">
@@ -72,9 +78,10 @@ const SetSelectionScreen = ({
                     >
                         <FaHistory className="me-2" /> My Sets
                     </Button>
-                    <FileUploadModel
-                        onFileUpload={onFileUpload}
-                    />
+                    <Button variant="primary" onClick={() => setShowUploadModal(true)}>
+                        <FaUpload className="me-2" />
+                        Upload Questions
+                    </Button>
                     <Button variant="outline-success" onClick={onLoadRandomSet}>
                         <FaRandom className="me-2" /> Random Set
                     </Button>
@@ -184,6 +191,12 @@ const SetSelectionScreen = ({
                     </Col>
                 </Row>
             )}
+
+            <FileUploadModal
+                show={showUploadModal}
+                handleClose={() => setShowUploadModal(false)}
+                onUploadComplete={handleUploadComplete}
+            />
         </Container>
     );
 };

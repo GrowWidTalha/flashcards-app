@@ -86,7 +86,7 @@ export const uploadUserQuestions = async (questions, moduleCode, setCode, order)
 // Submit user answer
 export const submitUserAnswer = async (setCode, questionId, userAnswer) => {
     try {
-        const response = await axios.post(`${API_URL}/questions/answer`, {
+        const response = await axios.post(`${API_BASE_URL}/questions/answer`, {
             setCode,
             questionId,
             userAnswer

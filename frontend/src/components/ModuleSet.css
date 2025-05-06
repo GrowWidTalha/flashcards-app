@@ -111,23 +111,46 @@
 
 .search-spinner {
     position: absolute;
-    right: 15px;
-    width: 20px;
-    height: 20px;
-    border: 3px solid rgba(0, 123, 255, 0.3);
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 1.5rem;
+    height: 1.5rem;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #007bff;
     border-radius: 50%;
-    border-top-color: #007bff;
     animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
     0% {
-        transform: rotate(0deg);
+        transform: translateY(-50%) rotate(0deg);
     }
 
     100% {
-        transform: rotate(360deg);
+        transform: translateY(-50%) rotate(360deg);
     }
+}
+
+.search-loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 8px;
+    z-index: 11;
+}
+
+.search-loading-text {
+    color: #007bff;
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+    text-align: center;
 }
 
 .search-results {
@@ -145,41 +168,48 @@
 }
 
 .search-result-item {
-    padding: 15px;
     display: block;
+    padding: 0.75rem 1rem;
     text-decoration: none;
-    color: #333;
-    border-bottom: 1px solid #e9ecef;
+    color: inherit;
     transition: background-color 0.2s;
 }
 
-.search-result-item:last-child {
-    border-bottom: none;
-}
-
 .search-result-item:hover {
-    background-color: rgba(0, 123, 255, 0.1);
+    background-color: #f8f9fa;
+    text-decoration: none;
+    color: inherit;
 }
 
-.search-result-content h4 {
-    margin: 0 0 5px;
+.search-result-content h5 {
+    margin: 0;
+    font-size: 1rem;
     color: #007bff;
 }
 
 .search-result-code {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     color: #6c757d;
-    margin: 0 0 5px;
+    margin: 0.25rem 0;
 }
 
 .search-result-module {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     color: #28a745;
-    margin: 0;
+    margin: 0.25rem 0;
+}
+
+.search-result-description {
+    font-size: 0.8rem;
+    color: #6c757d;
+    margin: 0.25rem 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .no-results {
-    padding: 20px;
+    padding: 1rem;
     text-align: center;
     color: #6c757d;
 }
@@ -481,4 +511,22 @@
     .set-progress-item {
         padding: 10px;
     }
+}
+
+/* Enhanced Search Styles */
+.search-section {
+    margin-bottom: 1rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.search-section:last-child {
+    border-bottom: none;
+}
+
+.search-section-title {
+    font-size: 0.9rem;
+    color: #6c757d;
+    margin-bottom: 0.5rem;
+    padding: 0 1rem;
 }

@@ -1,9 +1,9 @@
 import axios from "axios";
 
-// export const API_BASE_URL = "http://localhost:5000/api";
-// const API_BASE_URL_LOCAL = "http://localhost:5000/api";
-export const API_BASE_URL = "https://flashcards-app-backend.vercel.app/api";
-const API_BASE_URL_LOCAL = "https://flashcards-app-backend.vercel.app/api";
+// export const API_BASE_URL = "https://flashcards-app-backend.vercel.app/api";
+// const API_BASE_URL_LOCAL = "https://flashcards-app-backend.vercel.app/api";
+export const API_BASE_URL = "http://localhost:5000/api";
+const API_BASE_URL_LOCAL = "http://localhost:5000/api";
 
 export const fetchAllQuestions = async () => {
     try {
@@ -55,7 +55,7 @@ export const uploadAdminQuestions = async (questions) => {
 
 export const uploadAdminReplaceQuestions = async (questions) => {
     try {
-        await axios.post(`${API_BASE_URL_LOCAL}/admin/replaced`, { questions });
+        await axios.post(`${API_BASE_URL_LOCAL}/admin/replace`, { questions });
     } catch (error) {
         console.error("Error uploading questions:", error);
         throw error;

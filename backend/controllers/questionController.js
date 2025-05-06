@@ -60,32 +60,52 @@ exports.uploadUserQuestions = async (req, res) => {
             }
         }
 
-        // Process each question to match our schema
-        const enrichedQuestions = questions.map((q, index) => ({
-            question: q.question,
-            answer: q.answer,
-            moreInfo: q.moreInfo || '',
-            moduleCode,
-            setCode,
-            setGroup,
-            setName: set.setName,
-            setDescription: set.setDescription,
-            category: set.category || '',
-            subCategory1: set.subCategory1 || '',
-            subCategory2: set.subCategory2 || '',
-            serialNumber: (index + 1).toString(),
-            createdBy: 'user'
-        }));
+        // Process and upsert each question
+        for (let i = 0; i < questions.length; i++) {
+            const q = questions[i];
+            const serialNumber = (i + 1).toString();
 
-        // Insert the questions
-        await Question.insertMany(enrichedQuestions);
+            const questionData = {
+                question: q.question,
+                answer: q.answer,
+                moreInfo: q.moreInfo || '',
+                moduleCode,
+                setCode,
+                setGroup,
+                setName: set.setName,
+                setDescription: set.setDescription,
+                category: set.category || '',
+                subCategory1: set.subCategory1 || '',
+                subCategory2: set.subCategory2 || '',
+                serialNumber,
+                createdBy: 'user'
+            };
+
+            // Try to find existing question with same setCode and serialNumber
+            const existingQuestion = await Question.findOne({
+                setCode,
+                serialNumber
+            });
+
+            if (existingQuestion) {
+                // Update existing question
+                await Question.findByIdAndUpdate(
+                    existingQuestion._id,
+                    questionData,
+                    { new: true }
+                );
+            } else {
+                // Create new question
+                await Question.create(questionData);
+            }
+        }
 
         // Update question count for the set
         await updateQuestionCount(setCode);
 
         res.status(200).json({
-            message: "Questions uploaded successfully",
-            count: enrichedQuestions.length
+            message: "Questions uploaded/updated successfully",
+            count: questions.length
         });
     } catch (error) {
         console.error("Error uploading user questions:", error);

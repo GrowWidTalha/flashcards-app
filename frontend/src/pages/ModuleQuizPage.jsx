@@ -10,8 +10,8 @@ import QuizScreen from "../components/QuizScreen"
 import LoadingScreen from "../components/LoadingScreen"
 import "../components/ModuleSet.css"
 
-const ModuleQuizPage = () => {
-    const { moduleCode } = useParams()
+const ModuleQuizPage = ({ type = "module" }) => {
+    const { id } = useParams()
     const navigate = useNavigate()
 
     // State management
@@ -35,42 +35,67 @@ const ModuleQuizPage = () => {
     const [savedAnswers, setSavedAnswers] = useState({})
     const [currentAttemptId, setCurrentAttemptId] = useState(null)
 
-    // Fetch module and its sets
+    // Fetch module/set data
     useEffect(() => {
-        const fetchModuleData = async () => {
+        const fetchData = async () => {
             try {
                 setLoading(true)
-                const data = await getModuleByCode(moduleCode)
 
-                if (!data || !data.module) {
-                    setError("Module not found")
-                    return
-                }
+                if (type === "module") {
+                    const data = await getModuleByCode(id)
 
-                setModule(data.module)
+                    if (!data || !data.module) {
+                        setError("Module not found")
+                        return
+                    }
 
-                // Sort sets by order
-                const sortedSets = [...data.sets].sort((a, b) => a.setOrder - b.setOrder)
-                setSets(sortedSets)
+                    setModule(data.module)
 
-                // Set initial completion state
-                setCompletedSets(new Array(sortedSets.length).fill(false))
+                    // Sort sets by order
+                    const sortedSets = [...data.sets].sort((a, b) => a.setOrder - b.setOrder)
+                    setSets(sortedSets)
 
-                setLoading(false)
+                    // Set initial completion state
+                    setCompletedSets(new Array(sortedSets.length).fill(false))
 
-                // If we have sets, load the first one
-                if (sortedSets.length > 0) {
-                    loadSet(sortedSets[0].setCode, 0)
+                    setLoading(false)
+
+                    // If we have sets, load the first one
+                    if (sortedSets.length > 0) {
+                        loadSet(sortedSets[0].setCode, 0)
+                    }
+                } else {
+                    // Direct set access
+                    const data = await getSetByCode(id)
+
+                    if (!data || !data.set) {
+                        setError("Set not found")
+                        return
+                    }
+
+                    // For direct set access, we only have one set
+                    setSets([data.set])
+                    setCompletedSets([false])
+                    setModule({ moduleCode: data.set.moduleCode, moduleName: data.set.setGroup })
+
+                    // Load the set directly
+                    setCurrentSet({
+                        ...data.set,
+                        questions: data.questions,
+                    })
+                    setCurrentSetIndex(0)
+                    setCurrentQuestionIndex(0)
+                    setLoading(false)
                 }
             } catch (err) {
-                setError("Failed to load module data. Please try again later.")
-                console.error("Error fetching module:", err)
+                setError("Failed to load data. Please try again later.")
+                console.error("Error fetching data:", err)
                 setLoading(false)
             }
         }
 
-        fetchModuleData()
-    }, [moduleCode])
+        fetchData()
+    }, [id, type])
 
     // Load a specific set
     const loadSet = useCallback(

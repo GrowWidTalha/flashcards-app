@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { searchSets } from '../services/setService';
+import { searchContent } from '../services/searchService';
 import './ModuleSet.css';
 
 const SearchBar = () => {
     const [query, setQuery] = useState('');
-    const [results, setResults] = useState([]);
+    const [results, setResults] = useState({ modules: [], sets: [], questions: [] });
     const [isSearching, setIsSearching] = useState(false);
     const [showResults, setShowResults] = useState(false);
     const searchRef = useRef(null);
@@ -16,7 +16,7 @@ const SearchBar = () => {
             if (query.trim().length >= 2) {
                 setIsSearching(true);
                 try {
-                    const searchResults = await searchSets(query);
+                    const searchResults = await searchContent(query);
                     setResults(searchResults);
                     setShowResults(true);
                 } catch (error) {
@@ -25,7 +25,7 @@ const SearchBar = () => {
                     setIsSearching(false);
                 }
             } else {
-                setResults([]);
+                setResults({ modules: [], sets: [], questions: [] });
                 setShowResults(false);
             }
         }, 300);
@@ -50,7 +50,7 @@ const SearchBar = () => {
             <div className="search-input-wrapper">
                 <input
                     type="text"
-                    placeholder="Search sets by code or keywords..."
+                    placeholder="Search modules, sets, or questions..."
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     className="search-input"
@@ -61,23 +61,87 @@ const SearchBar = () => {
 
             {showResults && (
                 <div className="search-results">
-                    {results.length > 0 ? (
-                        results.map((set) => (
-                            <Link
-                                to={`/module/${set.setCode}`}
-                                key={set.setCode}
-                                className="search-result-item"
-                                onClick={() => setShowResults(false)}
-                            >
-                                <div className="search-result-content">
-                                    <h4>{set.setName}</h4>
-                                    <p className="search-result-code">{set.setCode}</p>
-                                    <p className="search-result-module">Module: {set.moduleCode}</p>
-                                </div>
-                            </Link>
-                        ))
+                    {isSearching && (
+                        <div className="search-loading-overlay">
+                            <div>
+                                <div className="search-spinner"></div>
+                                <div className="search-loading-text">Searching...</div>
+                            </div>
+                        </div>
+                    )}
+                    {results?.modules?.length === 0 && results?.sets?.length === 0 && results?.questions?.length === 0 ? (
+                        <div className="no-results">No results found</div>
                     ) : (
-                        <div className="no-results">No sets found</div>
+                        <>
+                            {results?.modules?.length > 0 && (
+                                <div className="search-section">
+                                    <h4 className="search-section-title">Modules</h4>
+                                    {results?.modules?.map((module) => (
+                                        <Link
+                                            to={`/module/${module.moduleCode}`}
+                                            key={module.moduleCode}
+                                            className="search-result-item"
+                                            onClick={() => setShowResults(false)}
+                                        >
+                                            <div className="search-result-content">
+                                                <h5>{module.moduleName}</h5>
+                                                <p className="search-result-code">{module.moduleCode}</p>
+                                                {module.moduleDescription && (
+                                                    <p className="search-result-description">{module.moduleDescription}</p>
+                                                )}
+                                            </div>
+                                        </Link>
+                                    ))}
+                                </div>
+                            )}
+
+                            {results?.sets?.length > 0 && (
+                                <div className="search-section">
+                                    <h4 className="search-section-title">Sets</h4>
+                                    {results?.sets?.map((set) => (
+                                        <Link
+                                            to={`/set/${set.setCode}`}
+                                            key={set.setCode}
+                                            className="search-result-item"
+                                            onClick={() => setShowResults(false)}
+                                        >
+                                            <div className="search-result-content">
+                                                <h5>{set.setName}</h5>
+                                                <p className="search-result-code">{set.setCode}</p>
+                                                <p className="search-result-module">Module: {set.moduleCode}</p>
+                                                {set.setDescription && (
+                                                    <p className="search-result-description">{set.setDescription}</p>
+                                                )}
+                                            </div>
+                                        </Link>
+                                    ))}
+                                </div>
+                            )}
+
+                            {results?.questions?.length > 0 && (
+                                <div className="search-section">
+                                    <h4 className="search-section-title">Questions</h4>
+                                    {results?.questions?.map((question) => (
+                                        <Link
+                                            to={`/set/${question.setCode}`}
+                                            key={question._id}
+                                            className="search-result-item"
+                                            onClick={() => setShowResults(false)}
+                                        >
+                                            <div className="search-result-content">
+                                                <h5>{question.question}</h5>
+                                                <p className="search-result-code">
+                                                    Set: {question.setName} ({question.setCode})
+                                                </p>
+                                                <p className="search-result-module">
+                                                    Module: {question.moduleName}
+                                                </p>
+                                            </div>
+                                        </Link>
+                                    ))}
+                                </div>
+                            )}
+                        </>
                     )}
                 </div>
             )}

@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { Button, Modal, Spinner, Form } from "react-bootstrap"
-import { FaHome, FaRandom, FaComment, FaArrowRight } from "react-icons/fa"
-import FileUploadModal from "./FileUploadModel"
+import { FaHome, FaRandom, FaComment, FaArrowRight, FaUpload } from "react-icons/fa"
+import FileUploadModal from "./FileUploadModal"
 import {
     addReport,
     recordQuestionFeedback,
@@ -44,6 +44,7 @@ const QuizScreen = ({
     const [feedbackSubmitted, setFeedbackSubmitted] = useState(false)
     const [showReport, setShowReport] = useState(false)
     const [showMoreInfo, setShowMoreInfo] = useState(false)
+    const [showUploadModal, setShowUploadModal] = useState(false)
 
 
     // Reset user answer when question changes
@@ -541,7 +542,18 @@ const QuizScreen = ({
                         <div className="no-questions-message text-center my-5">
                             <h4>No Questions Available</h4>
                             <p>Please upload a file or select a different set</p>
-                            <FileUploadModal onFileUpload={() => { }} />
+                            <Button variant="primary" onClick={() => setShowUploadModal(true)}>
+                                <FaUpload className="me-2" />
+                                Upload Questions
+                            </Button>
+                            <FileUploadModal
+                                show={showUploadModal}
+                                handleClose={() => setShowUploadModal(false)}
+                                onUploadComplete={() => {
+                                    setShowUploadModal(false);
+                                    // Add any additional refresh logic here
+                                }}
+                            />
                         </div>
                     )}
                 </div>

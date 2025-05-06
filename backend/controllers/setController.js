@@ -171,7 +171,7 @@ exports.getSetsByModule = async (req, res) => {
     }
 };
 
-// Search sets by code or keywords
+// Search sets and modules by code or keywords
 exports.searchSets = async (req, res) => {
     try {
         const { query } = req.query;
@@ -182,6 +182,7 @@ exports.searchSets = async (req, res) => {
 
         const searchRegex = new RegExp(query, 'i');
 
+        // Search for sets
         const sets = await Set.find({
             $or: [
                 { setCode: searchRegex },
@@ -192,6 +193,15 @@ exports.searchSets = async (req, res) => {
             ]
         }).sort({ moduleCode: 1, setOrder: 1 }).limit(20);
 
+        // Search for modules
+        const modules = await Module.find({
+            $or: [
+                { moduleCode: searchRegex },
+                { moduleName: searchRegex },
+                { moduleDescription: searchRegex }
+            ]
+        }).sort({ moduleCode: 1 }).limit(20);
+
         // Add question count to each set
         const setsWithQuestionCount = await Promise.all(sets.map(async (set) => {
             const count = await Question.countDocuments({ setCode: set.setCode });
@@ -201,7 +211,10 @@ exports.searchSets = async (req, res) => {
             };
         }));
 
-        res.json(setsWithQuestionCount);
+        res.json({
+            modules,
+            sets: setsWithQuestionCount
+        });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

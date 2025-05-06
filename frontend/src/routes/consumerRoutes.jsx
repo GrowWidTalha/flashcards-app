@@ -32,8 +32,12 @@ const consumerRoutes = [
         element: <ProtectedRoute><Home /></ProtectedRoute>,
     },
     {
-        path: '/module/:moduleCode',
-        element: <ProtectedRoute><ModuleQuizPage /></ProtectedRoute>,
+        path: '/module/:id',
+        element: <ProtectedRoute><ModuleQuizPage type="module" /></ProtectedRoute>,
+    },
+    {
+        path: '/set/:id',
+        element: <ProtectedRoute><ModuleQuizPage type="set" /></ProtectedRoute>,
     },
     {
         path: '/feedback',
